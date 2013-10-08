@@ -1,0 +1,95 @@
+#
+# Ben's Magic GNU Makefile for C/C++
+#
+# Usage:
+#	o	make			: same as 'make debug'
+#	o	make debug		: make the debug config
+#	o	make release	: make the release config (optimised)
+#	o	make all		: make both the above
+#	o	make clean		: remove all build files
+#
+
+# name of executable to be built
+EXECUTABLE = dave
+
+# project directories
+DIR_DEBUG = debug/
+DIR_RELEASE = release/
+DIR_SRC = src/
+DIR_INCLUDE = include/
+DIR_LIB = lib/arch_x64
+
+# libs to link
+# GLFW requires (on unix): X11, Xrandr (X resize and rotate), Xxf86vm (XF86 Video Mode), Xi (X Input) and pthread
+LIBS = -lm -lGL -lGLU -lglfw3 -lX11 -lXrandr -lXxf86vm -lXi -lpthread
+
+# compiler, flags, include / lib paths
+CC = g++
+RM = rm
+CFLAGS_DEBUG = -g -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-long-long
+CFLAGS_RELEASE = -O2 -DNDEBUG
+IPATH = -I/usr/X11/include -I/usr/pkg/include -I$(DIR_INCLUDE)
+LPATH = -L/usr/X11/lib -L/usr/pkg/lib -L$(DIR_LIB)
+LDPATH = -Wl,-R/usr/pkg/lib
+
+SRC = $(wildcard $(DIR_SRC)*.c $(DIR_SRC)*.cpp)
+OBJ_DEBUG = $(patsubst $(DIR_SRC)%, $(DIR_DEBUG)%.o, $(SRC))
+OBJ_RELEASE = $(patsubst $(DIR_SRC)%, $(DIR_RELEASE)%.o, $(SRC))
+DEPEND = $(patsubst $(DIR_SRC)%, $(DIR_DEBUG)%.d, $(SRC)) $(patsubst $(DIR_SRC)%, $(DIR_RELEASE)%.d, $(SRC))
+
+# default target: debug config
+.PHONY: debug
+debug: $(DIR_DEBUG)$(EXECUTABLE)
+
+# release config
+.PHONY: release
+release: $(DIR_RELEASE)$(EXECUTABLE)
+
+# debug and release
+.PHONY: all
+all: debug release
+
+# debug / release file targets
+$(DIR_DEBUG)$(EXECUTABLE): $(OBJ_DEBUG)
+	$(CC) -o $@ $(OBJ_DEBUG) $(LIBS) $(LPATH) $(LDPATH)
+
+$(DIR_RELEASE)$(EXECUTABLE): $(OBJ_RELEASE)
+	$(CC) -o $@ $(OBJ_RELEASE) $(LIBS) $(LPATH) $(LDPATH)
+
+# make and include the dependencies except on 'make clean' etc
+ifeq (,$(strip $(filter clean, $(MAKECMDGOALS))))
+-include $(DEPEND)
+endif
+
+# GCC dependency generation:
+# -MF  write the generated dependency rule to a file
+# -MG  assume missing headers will be generated and don't stop with an error
+# -MM  generate dependency rule for prerequisite, skipping system headers
+# -MP  add phony target for each header to prevent errors when header is missing
+# -MT  add a target to the generated dependency
+
+# dependency generation
+$(DIR_DEBUG)%.d: $(DIR_SRC)%
+	@mkdir -p $(DIR_DEBUG)
+	$(CC) -MM -MG -MP -MF $@ $^ -MT $(DIR_DEBUG)$*.o
+
+$(DIR_RELEASE)%.d: $(DIR_SRC)%
+	@mkdir -p $(DIR_RELEASE)
+	$(CC) -MM -MG -MP -MF $@ $^ -MT $(DIR_RELEASE)$*.o
+
+# source compilation
+$(DIR_DEBUG)%.o:
+	@mkdir -p $(DIR_DEBUG)
+	$(CC) $(CFLAGS_DEBUG) -c -o $@ $(DIR_SRC)$* $(IPATH)
+
+$(DIR_RELEASE)%.o:
+	@mkdir -p $(DIR_RELEASE)
+	$(CC) $(CFLAGS_RELEASE) -c -o $@ $(DIR_SRC)$* $(IPATH)
+
+# kill all build files
+.PHONY: clean
+clean:
+	$(RM) -f $(DIR_DEBUG)*.o $(DIR_DEBUG)*.d $(DIR_DEBUG)$(EXECUTABLE) $(DIR_DEBUG)$(EXECUTABLE).exe
+	$(RM) -f $(DIR_RELEASE)*.o $(DIR_RELEASE)*.d $(DIR_RELEASE)$(EXECUTABLE) $(DIR_RELEASE)$(EXECUTABLE).exe
+
+
