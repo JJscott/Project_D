@@ -3,15 +3,18 @@
 *.lo
 *.o
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-
 # General build files
-./debug/*
-./release/*
+/debug/*
+/release/*
+
+# System-specific Makefile
+/Makefile
+
+# Dependency build files
+/deps/glfw-3.0.2/build/*
+
+# Visual Studio Projects (TODO actually include these?)
+/VS2008/*
+/VS2010/*
+/VS2012/*
+/VS2013/*
