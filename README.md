@@ -1,7 +1,7 @@
 Project_D
 =========
 
-Project D.A.V.E. (Drawing and Animating Virtual Environments)
+Project D.A.V.E. (Drawing ~~and Animating~~ Awesome Virtual Environments)
 
 Building
 =========
@@ -23,7 +23,9 @@ There are some compiler / system specific makefiles in the git root (they point 
 Building with Visual Studio
 ---------------------------
 
-Make a solution (empty C++ project) in the git root, then rename the solution dir to (eg) 'VS2010'.
+There is a VS2010 solution which _should_ work. If you want to import this into a different version of VS, MAKE A COPY and put it into an appropriate directory (i.e. don't go overwriting my VS2010 solution!). The gitignore will also need updating if you want to commit a new VS solution.
+
+Otherwise: Make a solution (empty C++ project) in the git root, then rename the solution dir to (eg) 'VS2010'.
 - Add $(SolutionDir)../include to the include path
 - Add $(SolutionDir)../lib/[APPROPRIATE_DIRECTORY] to the lib path
 - Add the dependency lib names to the linker (leave the 'inherit' option on)
@@ -31,5 +33,4 @@ Make a solution (empty C++ project) in the git root, then rename the solution di
 - Add the contents of the src directory to the project
 - Use the same CRT as the deps were built with (default Multi-threaded Debug DLL)
 
-The reason the VS solution(s) aren't in the git atm is because VS likes to make big database-type files.
-TODO use the right ignores so the solutions can be added?
+
