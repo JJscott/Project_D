@@ -13,8 +13,9 @@
 # Dependency build files
 /deps/glfw-3.0.2/build/*
 
-# Visual Studio Projects (TODO actually include these?)
-/VS2008/*
+# Visual Studio Projects
 /VS2010/*
-/VS2012/*
-/VS2013/*
+!/VS2010/*.sln
+!/VS2010/*.vcxproj
+!/VS2010/*.vcxproj.filters
+!/VS2010/*.vcxproj.user
