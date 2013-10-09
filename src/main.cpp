@@ -10,6 +10,7 @@
 #include <string>
 #include <stdexcept>
 
+#include "glfw_helper.h"
 #include "initial3d.h"
 #include "hrtime.h"
 #include "shader.h"
@@ -94,6 +95,7 @@ void check_fbo() {
 }
 
 void init_fbo_scene(int w, int h) {
+
 	// make new framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	if (fbo_scene) glDeleteFramebuffers(1, &fbo_scene);
@@ -156,11 +158,12 @@ int main(int argc, char *argv[]) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 1);
 	//glfwWindowHint(GLFW_SAMPLES, 16);
 	window = glfwCreateWindow(win_width, win_height, "COMP308x1", NULL, NULL);
-
 	glfwMakeContextCurrent(window);
 
+	glfwpp::setInputCallbacks(window);
+
 	glfwSetWindowSizeCallback(window, reshape);
-	glfwSetCharCallback(window, keyboard);
+	//glfwSetCharCallback(window, keyboard);
 
 	if (!GLeeInit()) {
 		cerr << "GLee init failed: " << GLeeGetErrorString() << endl;
