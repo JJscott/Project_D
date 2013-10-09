@@ -11,13 +11,13 @@
 
 #include "initial3d.h"
 
-class Camera : private initial3d::Uncopyable {
+class Camera {
 public:
 	virtual void update() = 0;
 	virtual initial3d::mat4d getViewMatrix() = 0;
 };
 
-class FPSCamera : public Camera {
+class FPSCamera : private initial3d::Uncopyable, public Camera {
 private:
 	GLFWwindow *window;
 	initial3d::vec3d pos;
@@ -34,7 +34,7 @@ public:
 	
 	virtual void update() {
 		// pixels per 2*pi
-		double rot_speed = 400;
+		double rot_speed = 600;
 		
 		if (mouse_captured) {
 			int w, h;
@@ -45,6 +45,7 @@ public:
 			y -= h * 0.5;
 			rot_h += -x / rot_speed;
 			rot_v += -y / rot_speed;
+			rot_v = initial3d::math::clamp(rot_v, -0.499 * initial3d::math::pi(), 0.499 * initial3d::math::pi());
 			glfwSetCursorPos(window, w * 0.5, h * 0.5);
 		}
 		

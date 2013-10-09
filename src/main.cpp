@@ -40,7 +40,7 @@ hrtime_t fps_start;
 // window / projection
 GLFWwindow *window;
 int win_width = 512, win_height = 512;
-double fov_y = 60;
+double fov_y = 30;
 float zfar = 20000000;
 
 float exposure = 1;
