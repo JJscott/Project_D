@@ -706,11 +706,11 @@ namespace initial3d {
 		}
 		
 		inline vec3<T> project(const vec3<T> &v) const {
-			return v.scale(dot(v) / v.dot(v));
+			return v.multiply(dot(v) / v.dot(v));
 		}
 		
 		inline vec3<T> reject(const vec3<T> &v) const {
-			return subtract(v.scale(dot(v) / v.dot(v)));
+			return subtract(v.multiply(dot(v) / v.dot(v)));
 		}
 		
 		// magnitude

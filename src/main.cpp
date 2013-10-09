@@ -59,6 +59,21 @@ vec3d sun = vec3d::j();
 // camera
 Camera *camera;
 
+class main_key_handler : public glfwpp::KeyListener {
+public:
+	virtual void handleChar(GLFWwindow *window, unsigned int c) {
+		//if (c == 'w') cam_pos.z() -= Rg / 100;
+		//if (c == 'W') cam_pos.z() -= Rg / 10000;
+		//if (c == 's') cam_pos.z() += Rg / 100;
+		//if (c == 'S') cam_pos.z() += Rg / 10000;
+		if (c == 'r') sun = quatd::axisangle(vec3d::i(), math::pi() / 180) * sun;
+		if (c == 'f') sun = quatd::axisangle(vec3d::i(), -math::pi() / 180) * sun;
+		if (c == '=') exposure *= 1.2;
+		if (c == '-') exposure /= 1.2;
+		//cout << +cam_pos << endl;
+	}
+};
+
 void wait_exit(int code) {
 	string line;
 	getline(cin, line);
@@ -161,9 +176,9 @@ int main(int argc, char *argv[]) {
 	glfwMakeContextCurrent(window);
 
 	glfwpp::setInputCallbacks(window);
+	glfwpp::addKeyListener(window, new main_key_handler());
 
 	glfwSetWindowSizeCallback(window, reshape);
-	//glfwSetCharCallback(window, keyboard);
 
 	if (!GLeeInit()) {
 		cerr << "GLee init failed: " << GLeeGetErrorString() << endl;
@@ -408,18 +423,6 @@ void reshape(GLFWwindow *window, int w, int h) {
 	win_width = w;
 	win_height = h;
 	init_fbo_scene(win_width, win_height);
-}
-
-void keyboard(GLFWwindow *window, unsigned int key) {
-	//if (key == 'w') cam_pos.z() -= Rg / 100;
-	//if (key == 'W') cam_pos.z() -= Rg / 10000;
-	//if (key == 's') cam_pos.z() += Rg / 100;
-	//if (key == 'S') cam_pos.z() += Rg / 10000;
-	if (key == 'r') sun = quatd::axisangle(vec3d::i(), math::pi() / 180) * sun;
-	if (key == 'f') sun = quatd::axisangle(vec3d::i(), -math::pi() / 180) * sun;
-	if (key == '=') exposure *= 1.2;
-	if (key == '-') exposure /= 1.2;
-	//cout << +cam_pos << endl;
 }
 
 void test_tex3d(GLuint tex) {
