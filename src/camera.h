@@ -9,6 +9,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <iostream>
+
 #include "glfw_helper.h"
 #include "initial3d.h"
 #include "hrtime.h"
@@ -44,7 +46,8 @@ public:
 	
 	virtual void update() {
 		using namespace initial3d;
-
+		using namespace std;
+		
 		// time since last update
 		hrtime_t time_now;
 		getHighResTime(&time_now);
@@ -85,12 +88,19 @@ public:
 			double pos_mag = +pos;
 			vec3d dpos = ~move * speed * dt;
 			vec3d pos2 = pos + dpos;
-			quatd rot = quatd::axisangle(~pos ^ ~pos2, pos.angle(pos2));
-			ori = rot * ori;
+			try {
+				quatd rot = quatd::axisangle(~pos ^ ~pos2, pos.angle(pos2));
+				ori = rot * ori;
+			} catch (nan_error &e) {
+				// no rotation, do nothing
+			}
 			pos = pos2;
 			+pos = pos_mag + dpos * up;
+			
+			cout << pos << endl;
+			
 		} catch (nan_error &e) {
-			// do nothing
+			// no movement, do nothing
 		}
 
 	}

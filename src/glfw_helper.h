@@ -23,8 +23,9 @@ namespace glfwpp {
 	};
 	
 	// set the GLFW callbacks to the ones required to use these helpers
+	// uses key + mouse + focus
 	// will not be called automatically
-	void setInputCallbacks(GLFWwindow *window);
+	void setCallbacks(GLFWwindow *window);
 	
 	// if window == NULL, listens to all windows (that the callbacks are set for)
 	void addKeyListener(GLFWwindow *window, KeyListener *kl);

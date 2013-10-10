@@ -172,10 +172,10 @@ int main(int argc, char *argv[]) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 1);
 	//glfwWindowHint(GLFW_SAMPLES, 16);
-	window = glfwCreateWindow(win_width, win_height, "COMP308x1", NULL, NULL);
+	window = glfwCreateWindow(win_width, win_height, "DAVE", NULL, NULL);
 	glfwMakeContextCurrent(window);
 
-	glfwpp::setInputCallbacks(window);
+	glfwpp::setCallbacks(window);
 	glfwpp::addKeyListener(window, new main_key_handler());
 
 	glfwSetWindowSizeCallback(window, reshape);
