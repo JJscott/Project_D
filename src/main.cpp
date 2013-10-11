@@ -28,7 +28,7 @@ void reshape(GLFWwindow *, int, int);
 void keyboard(GLFWwindow *, unsigned int);
 
 // shaders
-ShaderManager *shaderman;
+ShaderManager *shaderman = NULL;
 GLuint prog_scene_space;
 GLuint prog_scene_sea;
 GLuint prog_scene_test;
@@ -59,8 +59,25 @@ vec3d sun = vec3d::j();
 // camera
 Camera *camera;
 
-class main_key_handler : public glfwpp::KeyListener {
+void initShaders() {
+	if (shaderman == NULL) shaderman = new ShaderManager("./shader");
+	shaderman->unloadAll();
+	
+	prog_scene_space = shaderman->getProgram("scene.vert;scene_space.frag");
+	prog_scene_sea = shaderman->getProgram("scene.vert;scene_sea.frag");
+	prog_scene_test = shaderman->getProgram("scene.vert;scene_test.frag");
+	
+	prog_deferred = shaderman->getProgram("deferred.vert;deferred.frag");
+}
+
+class main_event_handler : public glfwpp::KeyListener {
 public:
+	virtual void handleKey(GLFWwindow *window, int key, int scancode, int action, int mods) {
+		if (action == GLFW_PRESS) {
+			if (key == GLFW_KEY_F12) initShaders();
+		}
+	}
+	
 	virtual void handleChar(GLFWwindow *window, unsigned int c) {
 		//if (c == 'w') cam_pos.z() -= Rg / 100;
 		//if (c == 'W') cam_pos.z() -= Rg / 10000;
@@ -176,7 +193,7 @@ int main(int argc, char *argv[]) {
 	glfwMakeContextCurrent(window);
 
 	glfwpp::setCallbacks(window);
-	glfwpp::addKeyListener(window, new main_key_handler());
+	glfwpp::addKeyListener(window, new main_event_handler());
 
 	glfwSetWindowSizeCallback(window, reshape);
 
@@ -207,13 +224,7 @@ int main(int argc, char *argv[]) {
 
 	cout << "GLee init (GL 2.1) success." << endl;
 
-	// init shaders
-	shaderman = new ShaderManager("./shader");
-	prog_scene_space = shaderman->getProgram("scene.vert;scene_space.frag");
-	prog_scene_sea = shaderman->getProgram("scene.vert;scene_sea.frag");
-	prog_scene_test = shaderman->getProgram("scene.vert;scene_test.frag");
-	
-	prog_deferred = shaderman->getProgram("deferred.vert;deferred.frag");
+	initShaders();
 	
 	// init camera
 	camera = new FPSCamera(window, vec3d(0, Rg + 100, 0));

@@ -116,7 +116,9 @@ void main() {
 			hit_atmos = false;
 		}
 	}
-
+	
+	//hit_atmos = false;
+	
 	if (hit_atmos) {
 		// entered the atmosphere
 		if (intersect(planetpos_v, Rg, p0, dp, p1)) {
