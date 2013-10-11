@@ -57,6 +57,8 @@ bool intersect(vec3 ps, float radius, vec3 p0, vec3 n, out vec3 p) {
 }
 
 vec3 transmittance(vec3 pp, vec3 pa, vec3 pb) {
+	float d = distance(pa, pb);
+	if (d < 10.0) return vec3(1.0);
 	vec3 n = normalize(pb - pa);
 	pa -= pp;
 	pb -= pp;
@@ -69,6 +71,7 @@ vec3 transmittance(vec3 pp, vec3 pa, vec3 pb) {
 	}
 	float mu_a = dot(normalize(pa), n);
 	float mu_b = dot(normalize(pb), n);
+	if (d < 100.0) return analyticTransmittance(length(pa) + 5.0, mu_a, d);
 	vec3 trans_a = clamp(transmittance(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
 	vec3 trans_b = clamp(transmittance(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
 	return clamp(trans_a / trans_b, vec3(0.0), vec3(1.0));

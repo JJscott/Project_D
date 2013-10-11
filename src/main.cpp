@@ -42,7 +42,7 @@ hrtime_t fps_start;
 GLFWwindow *window;
 int win_width = 512, win_height = 512;
 double fov_y = 30;
-float zfar = 20000000;
+float zfar = 2000000;
 
 float exposure = 1;
 
@@ -62,19 +62,32 @@ Camera *camera;
 void initShaders() {
 	if (shaderman == NULL) shaderman = new ShaderManager("./shader");
 	shaderman->unloadAll();
+	bool success = false;
+	// loop until successfully loaded (runtime-reloading for shader dev)
+	do {
+		try {
+
+			prog_scene_space = shaderman->getProgram("scene.vert;scene_space.frag");
+			prog_scene_sea = shaderman->getProgram("scene.vert;scene_sea.frag");
+			prog_scene_test = shaderman->getProgram("scene.vert;scene_test.frag");
 	
-	prog_scene_space = shaderman->getProgram("scene.vert;scene_space.frag");
-	prog_scene_sea = shaderman->getProgram("scene.vert;scene_sea.frag");
-	prog_scene_test = shaderman->getProgram("scene.vert;scene_test.frag");
-	
-	prog_deferred = shaderman->getProgram("deferred.vert;deferred.frag");
+			prog_deferred = shaderman->getProgram("deferred.vert;deferred.frag");
+
+			success = true;
+		} catch (shader_error &e) {
+			cout << "\n\nOne or more shader programs did not load successfully.\nPress enter to reload.\n" << endl;
+			string line;
+			getline(cin, line);
+		}
+	} while (!success);
 }
 
 class main_event_handler : public glfwpp::KeyListener {
 public:
 	virtual void handleKey(GLFWwindow *window, int key, int scancode, int action, int mods) {
 		if (action == GLFW_PRESS) {
-			if (key == GLFW_KEY_F12) initShaders();
+			// f12 is a VS debugger keybinding (trigger breakpoint)
+			if (key == GLFW_KEY_F5) initShaders();
 		}
 	}
 	

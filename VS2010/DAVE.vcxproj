@@ -149,6 +149,20 @@
     <ClInclude Include="..\src\initial3d.h" />
     <ClInclude Include="..\src\shader.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\shader\deferred.frag" />
+    <None Include="..\shader\deferred.vert" />
+    <None Include="..\shader\planet.frag" />
+    <None Include="..\shader\planet.vert" />
+    <None Include="..\shader\planet_sea.frag" />
+    <None Include="..\shader\scene.frag" />
+    <None Include="..\shader\scene.vert" />
+    <None Include="..\shader\scene_sea.frag" />
+    <None Include="..\shader\scene_space.frag" />
+    <None Include="..\shader\scene_test.frag" />
+    <None Include="..\shader\space.frag" />
+    <None Include="..\shader\test.frag" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
