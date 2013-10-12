@@ -62,18 +62,25 @@ float magic_term(float a, float b, float c, float x) {
 
 // analytic density ratio integral (for Rg = 6360000)
 float dri(float H, float r, float theta) {
+	// THIS ACTUALLY WORKS! praise the maou.
 	theta = abs(theta);
 	float magic = 0.0;
-	// piecewise function fitted in matlab
+	// piecewise function fitted in matlab (in halves) using the 'fit' function with model 'gauss3'
 	if (theta < M_PI * 0.5) {
-		magic += magic_term(1.303e13, 5.627, 0.7397, theta);
-		magic += magic_term(5.03, 2.238, 0.7728, theta);
-		magic += magic_term(0.2276, 0.9542, 0.4843, theta);
+		//magic += magic_term(1.303e13, 5.627, 0.7397, theta);
+		//magic += magic_term(5.03, 2.238, 0.7728, theta);
+		//magic += magic_term(0.2276, 0.9542, 0.4843, theta);
+		magic += magic_term(+2.4906166e+09, +4.4987157e+00, +6.3150025e-01, theta);
+		magic += magic_term(+4.9114098e+00, +2.2356545e+00, +7.8121914e-01, theta);
+		magic += magic_term(+2.1232654e-01, +9.3667162e-01, +4.7475181e-01, theta);
 	} else {
 		theta -= M_PI * 0.5;
-		magic += magic_term(-56.31, 0.4758, 0.1257, theta);
-		magic += magic_term(13.99, 0.3213, 0.0009591, theta);
-		magic += magic_term(6.829e16, 8.512, 1.39, theta);
+		//magic += magic_term(-56.31, 0.4758, 0.1257, theta);
+		//magic += magic_term(13.99, 0.3213, 0.0009591, theta);
+		//magic += magic_term(6.829e16, 8.512, 1.39, theta);
+		magic += magic_term(-5.6851890e+01, +4.7739437e-01, +1.2632559e-01, theta);
+		magic += magic_term(+0.0000000e+00, +6.2822074e-01, +9.5788390e-04, theta);
+		magic += magic_term(+9.7339527e+15, +8.0646437e+00, +1.3527238e+00, theta);
 	}
 	return H * exp((Rg - r) / H) * exp(magic);
 }
