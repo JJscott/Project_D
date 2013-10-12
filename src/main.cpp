@@ -98,8 +98,14 @@ public:
 		//if (c == 'S') cam_pos.z() += Rg / 10000;
 		if (c == 'r') sun = quatd::axisangle(vec3d::i(), math::pi() / 180) * sun;
 		if (c == 'f') sun = quatd::axisangle(vec3d::i(), -math::pi() / 180) * sun;
-		if (c == '=') exposure *= 1.2;
-		if (c == '-') exposure /= 1.2;
+		if (c == '=') {
+			exposure *= 1.2;
+			cout << "exposure = " << exposure << endl;
+		}
+		if (c == '-') {
+			exposure /= 1.2;
+			cout << "exposure = " << exposure << endl;
+		}
 		//cout << +cam_pos << endl;
 	}
 };
@@ -433,7 +439,11 @@ void display() {
 
 	glFinish();
 	check_gl();
-
+	
+	float pixeldata[3];
+	glReadPixels(0, 0, 1, 1, GL_RGB, GL_FLOAT, pixeldata);
+	//cout << "pixel = " << pixeldata[0] << " " << pixeldata[1] << pixeldata[2] << endl;
+	
 	// clean up
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(0);

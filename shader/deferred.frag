@@ -56,25 +56,109 @@ bool intersect(vec3 ps, float radius, vec3 p0, vec3 n, out vec3 p) {
 	return true;
 }
 
-vec3 transmittance(vec3 pp, vec3 pa, vec3 pb) {
+float magic_term(float a, float b, float c, float x) {
+	return a * exp(-pow((x - b) / c, 2));
+}
+
+// analytic density ratio integral (for Rg = 6360000)
+float dri(float H, float r, float theta) {
+	theta = abs(theta);
+	float magic = 0.0;
+	// piecewise function fitted in matlab
+	if (theta < M_PI * 0.5) {
+		magic += magic_term(1.303e13, 5.627, 0.7397, theta);
+		magic += magic_term(5.03, 2.238, 0.7728, theta);
+		magic += magic_term(0.2276, 0.9542, 0.4843, theta);
+	} else {
+		theta -= M_PI * 0.5;
+		magic += magic_term(-56.31, 0.4758, 0.1257, theta);
+		magic += magic_term(13.99, 0.3213, 0.0009591, theta);
+		magic += magic_term(6.829e16, 8.512, 1.39, theta);
+	}
+	return H * exp((Rg - r) / H) * exp(magic);
+}
+
+vec3 transmittance_Mk3(float r, float mu) {
+	float theta = acos(mu);
+	return exp(-betaR * dri(HR, r, theta) - 1.1 * betaM * dri(HM, r, theta));
+}
+
+vec3 transmittance_Mk3(vec3 pp, vec3 pa, vec3 pb) {
 	float d = distance(pa, pb);
-	if (d < 10.0) return vec3(1.0);
+	if (d < 50.0) return vec3(1.0);
 	vec3 n = normalize(pb - pa);
 	pa -= pp;
 	pb -= pp;
+	
+	//vec3 foo = vec3(1.0, 0.0, 0.0);
+	
 	if (length(pb) < length(pa)) {
 		// we want the lookup rays to point up if possible
 		vec3 temp = pa;
 		pa = pb;
 		pb = temp;
 		n = -n;
+		
+		//foo = vec3(0.0, 0.0, 1.0);
 	}
 	float mu_a = dot(normalize(pa), n);
 	float mu_b = dot(normalize(pb), n);
-	if (d < 100.0) return analyticTransmittance(length(pa) + 5.0, mu_a, d);
+	//if (d < 100.0) return analyticTransmittance(length(pa) + 5.0, mu_a, d);
+	vec3 trans_a = clamp(transmittance_Mk3(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
+	vec3 trans_b = clamp(transmittance_Mk3(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
+	return clamp(trans_a / trans_b, vec3(0.0), vec3(1.0));
+}
+
+vec3 transmittance(vec3 pp, vec3 pa, vec3 pb) {
+	float d = distance(pa, pb);
+	if (d < 10.0) return vec3(1.0);
+	vec3 n = normalize(pb - pa);
+	pa -= pp;
+	pb -= pp;
+	
+	//vec3 foo = vec3(1.0, 0.0, 0.0);
+	
+	if (length(pb) < length(pa)) {
+		// we want the lookup rays to point up if possible
+		vec3 temp = pa;
+		pa = pb;
+		pb = temp;
+		n = -n;
+		
+		//foo = vec3(0.0, 0.0, 1.0);
+	}
+	float mu_a = dot(normalize(pa), n);
+	float mu_b = dot(normalize(pb), n);
+	//if (d < 100.0) return analyticTransmittance(length(pa) + 5.0, mu_a, d);
 	vec3 trans_a = clamp(transmittance(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
 	vec3 trans_b = clamp(transmittance(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
 	return clamp(trans_a / trans_b, vec3(0.0), vec3(1.0));
+}
+
+// this works in pseudo-world space
+vec3 transmittance_naive(vec3 pa, vec3 pb, vec3 n) {
+	float mu_a = dot(normalize(pa), n);
+	float mu_b = dot(normalize(pb), n);
+	vec3 trans_a = clamp(transmittance(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
+	vec3 trans_b = clamp(transmittance(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
+	return clamp(trans_a / trans_b, vec3(0.0), vec3(1.0));
+}
+
+vec3 transmittance_Mk2(vec3 pp, vec3 pa, vec3 pb) {
+	float d = distance(pa, pb);
+	if (d < 10.0) return vec3(1.0);
+	vec3 n = normalize(pb - pa);
+	pa -= pp;
+	pb -= pp;
+	
+	// lookup both ways, then take the biggest
+	vec3 trans_ab = transmittance_naive(pa, pb, n);
+	vec3 trans_ba = transmittance_naive(pb, pa, -n);
+	
+	return max(trans_ab, trans_ba);
+	
+	//if (distance(trans_ab, vec3(0.8)) < distance(trans_ba, vec3(0.8))) return trans_ab;
+	//else return trans_ba;
 }
 
 void main() {
@@ -157,14 +241,15 @@ void main() {
 		float mu1_vx = dot(dp, normalize(p1 - planetpos_v));
 		float mu1_sx = dot(sunnorm_v, normalize(p1 - planetpos_v));
 		
-		att = transmittance(planetpos_v, p0, p1);
+		att = transmittance_Mk3(planetpos_v, p0, p1);
 
 		vec4 insc0 = max(texture4D(sampler_inscatter, r0, mu0_vx, mu0_sx, mu_vs), vec4(0.0));
 		vec4 insc1 = max(texture4D(sampler_inscatter, r1, mu1_vx, mu1_sx, mu_vs), vec4(0.0));
 		
 		vec4 insc = max(insc0 - att.rgbr * insc1, vec4(0.0));
 		
-		L1sun = ISun * clamp(transmittance(r1, mu1_sx), vec3(0.0), vec3(1.0));
+		// TODO shadow test in transmittance here
+		L1sun = ISun * clamp(transmittance_Mk3(r1, mu1_sx), vec3(0.0), vec3(1.0));
 		L1irr = ISun * irradiance(sampler_irradiance, r1, mu1_sx);
 		
 		L = max(insc.rgb * Pr + getMie(insc) * Pm, vec3(0.0)) * ISun;
