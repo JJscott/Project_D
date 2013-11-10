@@ -27,7 +27,7 @@
 #include "nnntt.h"
 
 #define DAVE_TERRAIN
-//#define DAVE_TREE
+#define DAVE_TREE
 
 // james project stuff
 //#include "netcam.h"
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
 	// make treeeeeeeeeeeeeeeeeeeeee
 	list_tree = glGenLists(1);
 	TreeGenerator tree_gen;
-	//tree_gen.buildTree(list_tree);
+	tree_gen.buildTree(list_tree);
 #endif
 	
 	atmos::makeTables();

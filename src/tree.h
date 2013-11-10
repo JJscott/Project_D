@@ -26,11 +26,11 @@ struct Node {
 };
 struct NodeP{
 	Node *node;
-	std::map<Node *, double> *costmap;
+	double cost;
 	bool operator<(const NodeP &rhs) const {
-		return (*costmap)[node] > (*costmap)[rhs.node];
+		return cost > rhs.cost;
 	}
-	NodeP(Node *n, std::map<Node*, double> *cm) : node(n), costmap(cm) {}
+	NodeP(Node *n, double cost_) : node(n), cost(cost_) {}
 };
 
 struct Edge {

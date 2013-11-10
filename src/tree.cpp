@@ -332,35 +332,35 @@ void TreeGenerator::createGraph2(Volume *volume, Graph *graph) {
 
 
 void TreeGenerator::mapParents(Graph *graph, Node *root, map<Node *, Node *> &parent) {
-	priority_queue<NodeP> allNodes;
+	priority_queue<NodeP> fringe;
 	map<Node*, double> cost;
 
-	//create NodeP for all nodes in the graph
-	for (int i=0; i<(int)graph->nodes.size(); i++){
-		if (graph->nodes[i] != root) {
-			cost[graph->nodes[i]] = math::inf<double>();
-		} else {
-			cost[graph->nodes[i]] = 0.0;
-		}
-		allNodes.push(NodeP(graph->nodes[i], &cost));
-	}
+	// set root to cost 0, add to fringe
+	cost[root] = 0.0;
+	fringe.push(NodeP(root, 0));
 
-	while (allNodes.size() > 0) {
-		NodeP next = allNodes.top();
-		allNodes.pop();
+	while (fringe.size() > 0) {
+		NodeP next = fringe.top();
+		fringe.pop();
 
-		if (math::isinf(cost[next.node]))
-			continue;
+		// lower cost already found for this node, ignore
+		if (cost[next.node] < next.cost) continue;
 
 		for (int i=0; i<(int)next.node->edges.size(); i++) {
-
-			Edge * edge = next.node->edges[i];
-			double alt = cost[next.node] + edge->weight;
+			Edge *edge = next.node->edges[i];
 			Node *neighbour = edge->getOther(next.node);
+			auto cost_it = cost.find(neighbour);
+			// current best cost to neighbour, inf if not visited yet
+			double cost0 = cost_it == cost.end() ? math::inf<double>() : cost_it->second;
+			// cost to neighbour through this node
+			double cost1 = cost[next.node] + edge->weight;
 
-			if (alt < cost[neighbour]) {
-				cost[neighbour] = alt;
+			if (cost1 < cost0) {
+				// cost through this node better than current best
+				cost[neighbour] = cost1;
 				parent[neighbour] = next.node;
+				// add neighbour to fringe (some fringe elements may still refer to this node with a higher cost, they will be ignored)
+				fringe.push(NodeP(neighbour, cost1));
 			}
 		}
 	}
