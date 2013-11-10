@@ -19,3 +19,9 @@
 !/VS2010/*.vcxproj
 !/VS2010/*.vcxproj.filters
 !/VS2010/*.vcxproj.user
+
+/VS2013/*
+!/VS2013/*.sln
+!/VS2013/*.vcxproj
+!/VS2013/*.vcxproj.filters
+!/VS2013/*.vcxproj.user

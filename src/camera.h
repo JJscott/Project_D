@@ -110,8 +110,13 @@ public:
 	}
 	
 	virtual void handleKey(GLFWwindow *window, int key, int scancode, int action, int mods) {
+		int w, h;
+		glfwGetWindowSize(window, &w, &h);
 		if (action == GLFW_PRESS) {
-			if (key == GLFW_KEY_GRAVE_ACCENT) mouse_captured = !mouse_captured;
+			if (key == GLFW_KEY_GRAVE_ACCENT) {
+				mouse_captured = !mouse_captured;
+				if (mouse_captured) glfwSetCursorPos(window, w * 0.5, h * 0.5);
+			}
 			if (key == GLFW_KEY_LEFT_BRACKET) speed *= 0.5;
 			if (key == GLFW_KEY_RIGHT_BRACKET) speed *= 2;
 		}

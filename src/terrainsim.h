@@ -1,0 +1,1 @@
+void generateErosionMap(double *heightMap, int width, int height, int scale, int iterations);

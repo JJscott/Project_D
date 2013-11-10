@@ -10,12 +10,24 @@
 #include <string>
 #include <stdexcept>
 
+#include <type_traits>
+
+// bens general awesomeness
 #include "glfw_helper.h"
 #include "initial3d.h"
 #include "hrtime.h"
 #include "shader.h"
+
+// bens project stuff
 #include "atmos.h"
 #include "camera.h"
+
+// joshs project stuff
+#include "tree.h"
+#include "nnntt.h"
+
+// james project stuff
+//#include "netcam.h"
 
 using namespace std;
 using namespace initial3d;
@@ -32,19 +44,22 @@ ShaderManager *shaderman = NULL;
 GLuint prog_scene_space;
 GLuint prog_scene_sea;
 GLuint prog_scene_test;
+GLuint prog_scene_tree;
+GLuint prog_scene_terrain;
 GLuint prog_deferred;
 
 // fps counter variables
 int fps;
 hrtime_t fps_start;
+hrtime_t last_frame;
 
 // window / projection
 GLFWwindow *window;
 int win_width = 512, win_height = 512;
 double fov_y = 30;
-float zfar = 2000000;
+float zfar = 10000000;
 
-float exposure = 1;
+float exposure;
 
 // deferred shading fbo + textures
 GLuint fbo_scene = 0;
@@ -54,10 +69,42 @@ GLuint tex_scene_norm = 0;
 GLuint tex_scene_diffuse = 0;
 
 // sun
-vec3d sun = vec3d::j();
+vec3d sun;
+bool sun_moving;
 
 // camera
-Camera *camera;
+Camera *camera = NULL;
+
+// JOSHS FUN TIMES
+GLuint list_tree;
+GLuint list_terrain;
+
+int camtype = 0;
+
+void switchCamera() {
+
+	if (camera != NULL) delete camera;
+	if (camtype == 0) {
+		//camera = new NetworkCamera();
+		camtype = 1;
+	} else {
+		camera = new FPSCamera(window, vec3d(0, Rg + 100, 0));
+		camtype = 0;
+	}
+}
+
+void initAwesome() {
+	// init camera
+	if (camera != NULL) delete camera;
+	camera = new FPSCamera(window, vec3d(-4314, Rg + 2830, 21957));
+	
+	// init sun
+	sun = quatd::axisangle(vec3d::i(), -0.1) * -vec3d::k();
+	
+	exposure = 0.2;
+	
+	sun_moving = false;
+}
 
 void initShaders() {
 	if (shaderman == NULL) shaderman = new ShaderManager("./shader");
@@ -70,6 +117,8 @@ void initShaders() {
 			prog_scene_space = shaderman->getProgram("scene.vert;scene_space.frag");
 			prog_scene_sea = shaderman->getProgram("scene.vert;scene_sea.frag");
 			prog_scene_test = shaderman->getProgram("scene.vert;scene_test.frag");
+			prog_scene_tree = shaderman->getProgram("scene.vert;scene_tree.frag");
+			prog_scene_terrain = shaderman->getProgram("scene.vert;scene_terrain.frag");
 	
 			prog_deferred = shaderman->getProgram("deferred.vert;deferred.frag");
 
@@ -88,6 +137,8 @@ public:
 		if (action == GLFW_PRESS) {
 			// f12 is a VS debugger keybinding (trigger breakpoint)
 			if (key == GLFW_KEY_F5) initShaders();
+			if (key == GLFW_KEY_F9) switchCamera();
+			if (key == GLFW_KEY_F10) initAwesome();
 		}
 	}
 	
@@ -105,6 +156,9 @@ public:
 		if (c == '-') {
 			exposure /= 1.2;
 			cout << "exposure = " << exposure << endl;
+		}
+		if (c == 'p') {
+			sun_moving = !sun_moving;
 		}
 		//cout << +cam_pos << endl;
 	}
@@ -245,14 +299,24 @@ int main(int argc, char *argv[]) {
 
 	initShaders();
 	
-	// init camera
-	camera = new FPSCamera(window, vec3d(0, Rg + 100, 0));
+	initAwesome();
 
 	fps = 0;
 	getHighResTime(&fps_start);
+	getHighResTime(&last_frame);
 
+	// make terrain
+	// this needs to be before the tree gen otherwise the psuedorandom gods hate us (probably)
+	list_terrain = glGenLists(1);
+	//NewNewNewTerrainTest::map(list_terrain, 256, 128);
+
+	// make treeeeeeeeeeeeeeeeeeeeee
+	list_tree = glGenLists(1);
+	TreeGenerator tree_gen;
+	tree_gen.buildTree(list_tree);
+	
 	atmos::makeTables();
-
+	
 	reshape(window, win_width, win_height);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -289,6 +353,7 @@ void draw_fullscreen_quad() {
 
 void test_tex2d(GLuint tex) {
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
 	glViewport(0, 0, win_width, win_height);
 	glUseProgram(0);
 	glDisable(GL_LIGHTING);
@@ -303,6 +368,15 @@ void test_tex2d(GLuint tex) {
 }
 
 void display() {
+	hrtime_t now;
+	getHighResTime(&now);
+	double delta_t = highResTimeToSec(&last_frame, &now);
+	last_frame = now;
+	
+	// move sun
+	if (sun_moving) {
+		sun = quatd::axisangle(vec3d::i(), delta_t * math::pi() / 600) * sun;
+	}
 	
 	camera->update();
 
@@ -338,14 +412,26 @@ void display() {
 	glPushMatrix();
 	glMultMatrixd(~modelview_terrain);
 
-	// draw terrain here
+	// draw stuff here
 	
-	glUseProgram(prog_scene_test);
-	glUniform1f(glGetUniformLocation(prog_scene_test, "far"), zfar);
+	glUseProgram(prog_scene_tree);
+	glUniform1f(glGetUniformLocation(prog_scene_tree, "far"), zfar);
+	glPushMatrix();
+	glTranslated(0, 2150, 0);
+	glScaled(1000, 1000, 1000);
+	glCallList(list_tree);
+	glPopMatrix();
 	
-	GLUquadric *quad = gluNewQuadric();
-	gluSphere(quad, 10000, 100, 100);
-	gluDeleteQuadric(quad);
+	glUseProgram(prog_scene_terrain);
+	glUniform1f(glGetUniformLocation(prog_scene_terrain, "far"), zfar);
+	glPushMatrix();
+	glScaled(100, 100, 100);
+	//glCallList(list_terrain);
+	glPopMatrix();
+	
+	//GLUquadric *quad = gluNewQuadric();
+	//gluSphere(quad, 10000, 100, 100);
+	//gluDeleteQuadric(quad);
 	
 	glPopMatrix();
 
