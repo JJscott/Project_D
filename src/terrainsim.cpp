@@ -19,12 +19,14 @@ struct GGen_OutflowValues{
     double left;
     double right;
     double bottom;
+
+	GGen_OutflowValues() : top(0), left(0), right(0), bottom(0) { }
 };
 
 struct GGen_Vec3{
     double x, y, z;
 
-    GGen_Vec3() : x(0), y(0), z(0) {};
+    GGen_Vec3() : x(0), y(0), z(0) { }
 };
 
 class ErosionSimulator {
@@ -101,6 +103,8 @@ void generateErosionMap(double *heightMap, int width, int height, int scale, int
     GGen_OutflowValues *outflowFluxMap = new GGen_OutflowValues[simulator->getLength()];
     GGen_Vec3 *velocityVectorMap = new GGen_Vec3[simulator->getLength()];
 
+	memset(waterMap, 0, simulator->getLength() * sizeof(double));
+	memset(sedimentMap, 0, simulator->getLength() * sizeof(double));
 
     for (int i = 0; i < simulator->getLength(); i++){
         heightMap[i] *= scale;

@@ -26,6 +26,9 @@
 #include "tree.h"
 #include "nnntt.h"
 
+#define DAVE_TERRAIN
+//#define DAVE_TREE
+
 // james project stuff
 //#include "netcam.h"
 
@@ -305,15 +308,19 @@ int main(int argc, char *argv[]) {
 	getHighResTime(&fps_start);
 	getHighResTime(&last_frame);
 
+#ifdef DAVE_TERRAIN
 	// make terrain
 	// this needs to be before the tree gen otherwise the psuedorandom gods hate us (probably)
 	list_terrain = glGenLists(1);
-	//NewNewNewTerrainTest::map(list_terrain, 256, 128);
+	NewNewNewTerrainTest::map(list_terrain, 256, 128);
+#endif
 
+#ifdef DAVE_TREE
 	// make treeeeeeeeeeeeeeeeeeeeee
 	list_tree = glGenLists(1);
 	TreeGenerator tree_gen;
-	tree_gen.buildTree(list_tree);
+	//tree_gen.buildTree(list_tree);
+#endif
 	
 	atmos::makeTables();
 	
@@ -414,6 +421,7 @@ void display() {
 
 	// draw stuff here
 	
+#ifdef DAVE_TREE
 	glUseProgram(prog_scene_tree);
 	glUniform1f(glGetUniformLocation(prog_scene_tree, "far"), zfar);
 	glPushMatrix();
@@ -421,13 +429,16 @@ void display() {
 	glScaled(1000, 1000, 1000);
 	glCallList(list_tree);
 	glPopMatrix();
+#endif
 	
+#ifdef DAVE_TERRAIN
 	glUseProgram(prog_scene_terrain);
 	glUniform1f(glGetUniformLocation(prog_scene_terrain, "far"), zfar);
 	glPushMatrix();
 	glScaled(100, 100, 100);
-	//glCallList(list_terrain);
+	glCallList(list_terrain);
 	glPopMatrix();
+#endif
 	
 	//GLUquadric *quad = gluNewQuadric();
 	//gluSphere(quad, 10000, 100, 100);

@@ -3,7 +3,7 @@
 // this has the sampler for the transmittance texture
 #include "atmos/common.frag"
 
-const vec3 ISun = vec3(100.0);
+const vec3 ISun = vec3(100.0, 100.0, 100.0);
 
 // view space sun normal
 uniform vec3 sunnorm_v;
@@ -62,30 +62,18 @@ float magic_term(float a, float b, float c, float x) {
 
 // analytic density ratio integral (for Rg = 6360000)
 float dri(float H, float r, float theta) {
-	// THIS ACTUALLY WORKS! praise the maou.
 	theta = abs(theta);
 	float magic = 0.0;
-	// piecewise function fitted in matlab (in halves) using the 'fit' function with model 'gauss3'
-	if (theta < 1.571) { // TODO the split value could be slightly better?
-		magic += magic_term(+2.4906166e+09, +4.4987157e+00, +6.3150025e-01, theta);
-		magic += magic_term(+4.9114098e+00, +2.2356545e+00, +7.8121914e-01, theta);
-		magic += magic_term(+2.1232654e-01, +9.3667162e-01, +4.7475181e-01, theta);
+	// piecewise function fitted in matlab
+	if (theta < M_PI * 0.5) {
+		magic += magic_term(1.303e13, 5.627, 0.7397, theta);
+		magic += magic_term(5.03, 2.238, 0.7728, theta);
+		magic += magic_term(0.2276, 0.9542, 0.4843, theta);
 	} else {
 		theta -= M_PI * 0.5;
-		// this is the gauss3 model
-		//magic += magic_term(-5.6851890e+01, +4.7739437e-01, +1.2632559e-01, theta);
-		//magic += magic_term(+0.0000000e+00, +6.2822074e-01, +9.5788390e-04, theta);
-		//magic += magic_term(+9.7339527e+15, +8.0646437e+00, +1.3527238e+00, theta);
-		// this is a 6th order poly fitted to log(log(dri)), should work up to about theta = 1.9?
-		float theta_p = theta;
-		magic += +1.267319568680472e+000;
-		magic += +6.488913880926006e+000 * theta_p;
-		magic += +2.436555049329599e+001 * (theta_p *= theta_p);
-		magic += -9.202554872246324e+000 * (theta_p *= theta_p);
-		magic += -6.302961744292613e+002 * (theta_p *= theta_p);
-		magic += +2.124380767936526e+003 * (theta_p *= theta_p);
-		magic += -2.103612340838279e+003 * (theta_p *= theta_p);
-		magic = exp(magic);
+		magic += magic_term(-56.31, 0.4758, 0.1257, theta);
+		magic += magic_term(13.99, 0.3213, 0.0009591, theta);
+		magic += magic_term(6.829e16, 8.512, 1.39, theta);
 	}
 	return H * exp((Rg - r) / H) * exp(magic);
 }
@@ -116,24 +104,14 @@ vec3 transmittance_Mk3(vec3 pp, vec3 pa, vec3 pb) {
 	float mu_a = dot(normalize(pa), n);
 	float mu_b = dot(normalize(pb), n);
 	//if (d < 100.0) return analyticTransmittance(length(pa) + 5.0, mu_a, d);
-	//vec3 trans_a = clamp(transmittance_Mk3(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
-	//vec3 trans_b = clamp(transmittance_Mk3(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
-
-	float r_a = length(pa) + 5.0;
-	float r_b = length(pb) + 5.0;
-
-	float dri_r = dri(HR, r_a, acos(mu_a)) - dri(HR, r_b, acos(mu_b));
-	float dri_m = dri(HM, r_a, acos(mu_a)) - dri(HM, r_b, acos(mu_b));
-
-	vec3 trans = exp(-betaR * dri_r - 1.1 * betaM * dri_m);
-
-	return clamp(trans, vec3(0.0), vec3(1.0));
+	vec3 trans_a = clamp(transmittance_Mk3(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
+	vec3 trans_b = clamp(transmittance_Mk3(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
+	return clamp(trans_a / trans_b, vec3(0.0), vec3(1.0));
 }
 
 vec3 transmittance(vec3 pp, vec3 pa, vec3 pb) {
 	float d = distance(pa, pb);
 	if (d < 1000.0) return vec3(1.0);
-	// (d < 1000.0) return transmittance_Mk3(pp, pa, pb);
 	vec3 n = normalize(pb - pa);
 	pa -= pp;
 	pb -= pp;
@@ -209,6 +187,7 @@ void main() {
 	// init; we might not enter the atmosphere
 	vec3 L = vec3(0.0);
 	vec3 att = vec3(1.0);
+	vec3 att_sun = vec3(1.0);
 	vec3 L1sun = ISun;
 	vec3 L1irr = vec3(0.0);
 
@@ -265,12 +244,14 @@ void main() {
 		
 		att = transmittance(planetpos_v, p0, p1);
 
+		att_sun = clamp(transmittance(r0, mu0_sx), vec3(0.0), vec3(1.0));
+
 		vec4 insc0 = max(texture4D(sampler_inscatter, r0, mu0_vx, mu0_sx, mu_vs), vec4(0.0));
 		vec4 insc1 = max(texture4D(sampler_inscatter, r1, mu1_vx, mu1_sx, mu_vs), vec4(0.0));
 		
 		vec4 insc = max(insc0 - att.rgbr * insc1, vec4(0.0));
 		
-		// TODO shadow test in transmittance here?
+		// TODO shadow test in transmittance here
 		L1sun = ISun * clamp(transmittance(r1, mu1_sx), vec3(0.0), vec3(1.0));
 		L1irr = ISun * irradiance(sampler_irradiance, r1, mu1_sx);
 		
@@ -295,6 +276,11 @@ void main() {
 
 	// add inscattered and reflected light
 	L += L1 * att;
+	
+	// direct light from the sun
+	if (dot(sunnorm_v, dp) > 0.9999905) {
+		L += ISun * att_sun;
+	}
 
 	gl_FragColor = vec4(hdr(L), 1.0);
 }
