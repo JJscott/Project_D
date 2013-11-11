@@ -3,6 +3,7 @@
 #include <set>
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <queue>
 #include <algorithm>
 #include "GLee.h"
@@ -333,7 +334,7 @@ void TreeGenerator::createGraph2(Volume *volume, Graph *graph) {
 
 void TreeGenerator::mapParents(Graph *graph, Node *root, map<Node *, Node *> &parent) {
 	priority_queue<NodeP> fringe;
-	map<Node*, double> cost;
+	unordered_map<Node *, double> cost;
 
 	// set root to cost 0, add to fringe
 	cost[root] = 0.0;

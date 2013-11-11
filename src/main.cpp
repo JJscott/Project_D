@@ -1,4 +1,12 @@
 
+#ifdef NDEBUG
+void foo();
+#endif
+
+#ifdef _DEBUG
+void foo();
+#endif
+
 #include "GLee.h"
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
