@@ -24,13 +24,25 @@ struct Node {
 
 	Node(initial3d::vec3d p) : position(p) {}
 };
+
+// this is for the 'proper' mapParents()
+//struct NodeP{
+//	Node *node;
+//	double cost;
+//	bool operator<(const NodeP &rhs) const {
+//		return cost > rhs.cost;
+//	}
+//	NodeP(Node *n, double cost_) : node(n), cost(cost_) {}
+//};
+
+// this is for the borked mapParents()
 struct NodeP{
 	Node *node;
-	double cost;
+	std::map<Node *, double> *costmap;
 	bool operator<(const NodeP &rhs) const {
-		return cost > rhs.cost;
+		return (*costmap)[node] > (*costmap)[rhs.node];
 	}
-	NodeP(Node *n, double cost_) : node(n), cost(cost_) {}
+	NodeP(Node *n, std::map<Node*, double> *cm) : node(n), costmap(cm) {}
 };
 
 struct Edge {
