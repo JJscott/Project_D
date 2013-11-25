@@ -112,7 +112,7 @@ void initAwesome() {
 	// init sun
 	sun = quatd::axisangle(vec3d::i(), -0.1) * -vec3d::k();
 	
-	exposure = 0.2;
+	exposure = 20;
 	
 	sun_moving = false;
 }
@@ -188,8 +188,8 @@ void do_fps() {
 		fps++;
 	} else {
 		char strbuf[42];
-		sprintf(strbuf, "COMP308 x1, now with GLFW (%d FPS)", fps);
-		//glfwSetWindowTitle(window, strbuf);
+		sprintf(strbuf, "DAVE (%d FPS)", fps);
+		glfwSetWindowTitle(window, strbuf);
 		fps = 0;
 		getHighResTime(&fps_start);
 	}
@@ -496,28 +496,21 @@ void display() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	// bind textures
-	enum { TU_TRANSMITTANCE = 0, TU_INSCATTER, TU_IRRADIANCE, TU_POSITION, TU_NORMAL, TU_DIFFUSE };
-	glActiveTexture(GL_TEXTURE0 + TU_TRANSMITTANCE);
-	glBindTexture(GL_TEXTURE_2D, atmos::tex_transmittance);
-	glActiveTexture(GL_TEXTURE0 + TU_INSCATTER);
-	glBindTexture(GL_TEXTURE_3D, atmos::tex_inscatter);
-	glActiveTexture(GL_TEXTURE0 + TU_IRRADIANCE);
-	glBindTexture(GL_TEXTURE_2D, atmos::tex_irradiance);
+	// bind textures
+	enum { TU_DRITAB = 0, TU_POSITION, TU_NORMAL, TU_DIFFUSE };
+	glActiveTexture(GL_TEXTURE0 + TU_DRITAB);
+	glBindTexture(GL_TEXTURE_2D, atmos::tex_dritab);
 	glActiveTexture(GL_TEXTURE0 + TU_POSITION);
 	glBindTexture(GL_TEXTURE_2D, tex_scene_pos);
 	glActiveTexture(GL_TEXTURE0 + TU_NORMAL);
 	glBindTexture(GL_TEXTURE_2D, tex_scene_norm);
 	glActiveTexture(GL_TEXTURE0 + TU_DIFFUSE);
 	glBindTexture(GL_TEXTURE_2D, tex_scene_diffuse);
-
+	
 	// shader config
 	glUseProgram(prog_deferred);
 	atmos::setCommon(prog_deferred);
-	//glUniform1f(glGetUniformLocation(prog_deferred, "far"), zfar);
-	//glUniformMatrix4fv(glGetUniformLocation(prog_deferred, "view_inv"), 1, true, mat4f(!view));
-	glUniform1i(glGetUniformLocation(prog_deferred, "transmittanceSampler"), TU_TRANSMITTANCE);
-	glUniform1i(glGetUniformLocation(prog_deferred, "sampler_inscatter"), TU_INSCATTER);
-	glUniform1i(glGetUniformLocation(prog_deferred, "sampler_irradiance"), TU_IRRADIANCE);
+	glUniform1i(glGetUniformLocation(prog_deferred, "sampler_dritab"), TU_DRITAB);
 	glUniform1i(glGetUniformLocation(prog_deferred, "sampler_position"), TU_POSITION);
 	glUniform1i(glGetUniformLocation(prog_deferred, "sampler_normal"), TU_NORMAL);
 	glUniform1i(glGetUniformLocation(prog_deferred, "sampler_diffuse"), TU_DIFFUSE);
@@ -528,20 +521,9 @@ void display() {
 	draw_fullscreen_quad();
 
 	// unbind textures
-	glActiveTexture(GL_TEXTURE0 + TU_TRANSMITTANCE);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0 + TU_INSCATTER);
-	glBindTexture(GL_TEXTURE_3D, 0);
-	glActiveTexture(GL_TEXTURE0 + TU_IRRADIANCE);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0 + TU_POSITION);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0 + TU_NORMAL);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0 + TU_DIFFUSE);
-	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
-
+	glBindTexture(GL_TEXTURE_2D, 0);
+	
 	glFinish();
 	check_gl();
 	

@@ -138,6 +138,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="..\shader\atmos\dritab.frag" />
+    <None Include="..\shader\atmos\precomp.vert" />
     <None Include="..\shader\deferred.frag" />
     <None Include="..\shader\deferred.vert" />
     <None Include="..\shader\planet.frag" />

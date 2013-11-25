@@ -1,5 +1,5 @@
 /*
- * Atmospheric Scattering precomputation header
+ * Atmospheric Scattering header
  *
  */
 
@@ -9,35 +9,13 @@
 #include "GLee.h"
 #include "initial3d.h"
 
-// lookup table sizes
-#define RES_TRANSMITTANCE_MU	1024
-#define RES_TRANSMITTANCE_H		512
-#define RES_INSCATTER_VS		8
-#define RES_INSCATTER_SX		32
-#define RES_INSCATTER_VX		128
-#define RES_INSCATTER_H			32
-#define RES_IRRADIANCE_SX		1024
-#define RES_IRRADIANCE_H		512
-
-// number of orders of multiple scattering
-#define ATMOS_SCATTER_ORDERS	4
-
 namespace atmos {
 
-	// scattering constants
-	extern initial3d::color betaR;
-	extern initial3d::color betaM;
-	extern float h0R;
-	extern float h0M;
 	extern float Rg;
 	extern float Rt;
-	extern float RL;
-	extern float mieG;
 
 	// lookup table textures
-	extern GLuint tex_transmittance;
-	extern GLuint tex_inscatter;
-	extern GLuint tex_irradiance;
+	extern GLuint tex_dritab;
 
 	// function to (re)make the tables
 	void makeTables();

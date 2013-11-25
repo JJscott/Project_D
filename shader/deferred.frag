@@ -1,9 +1,21 @@
 #version 120
 
-// this has the sampler for the transmittance texture
-#include "atmos/common.frag"
+#define H0_MAX 0.005
+#define RC 1.02
 
-const vec3 ISun = vec3(100.0, 100.0, 100.0);
+#define PI 3.14159265
+
+const vec3 ISun = vec3(1.5);
+
+const vec3 beta0_r = vec3(5.47e-6, 1.28e-5, 3.12e-5);
+const vec3 beta0_m = vec3(0.000021);
+
+const float h0_r = 7994.0;
+const float h0_m = 1200.0;
+
+// planet radius
+uniform float Rg;
+uniform float Rt;
 
 // view space sun normal
 uniform vec3 sunnorm_v;
@@ -14,12 +26,6 @@ uniform vec3 planetpos_v;
 // exposure for HDR
 uniform float exposure;
 
-// inscatter texture (4D)
-uniform sampler3D sampler_inscatter;
-
-// irradiance texture
-uniform sampler2D sampler_irradiance;
-
 // original fragment position texture
 uniform sampler2D sampler_position;
 
@@ -29,24 +35,25 @@ uniform sampler2D sampler_normal;
 // diffuse material texture
 uniform sampler2D sampler_diffuse;
 
+// dritab texture
+uniform sampler2D sampler_dritab;
+
 varying vec4 fragpos_p;
 
 vec3 hdr(vec3 L) {
 	return vec3(1.0) - exp(-exposure * L);
 }
 
-// intersection of ray with arbitrary sphere
+// intersection of ray with arbitrary sphere, n must be normalized
 bool intersect(vec3 ps, float radius, vec3 p0, vec3 n, out vec3 p) {
 	p0 -= ps;
-	n = normalize(n);
-	// a = dot(n, n) == 1
 	float b = 2.0 * dot(n, p0);
 	float c = dot(p0, p0) - radius * radius;
 	float disc = b * b - 4.0 * c;
 	if (disc < 0) return false;
-	disc = sqrt(disc);
-	float t0 = (-b - disc) * 0.5;
-	float t1 = (-b + disc) * 0.5;
+	float sqrt_disc = sqrt(disc);
+	float t0 = (-b - sqrt_disc) * 0.5;
+	float t1 = (-b + sqrt_disc) * 0.5;
 	if (t1 < 0.0) return false;
 	if (t0 < 0.0) {
 		p = ps + p0 + t1 * n;
@@ -56,109 +63,66 @@ bool intersect(vec3 ps, float radius, vec3 p0, vec3 n, out vec3 p) {
 	return true;
 }
 
-float magic_term(float a, float b, float c, float x) {
-	return a * exp(-pow((x - b) / c, 2));
+// intersection of ray with arbitrary sphere (no output arg), n must be normalized
+bool intersect(vec3 ps, float radius, vec3 p0, vec3 n) {
+	p0 -= ps;
+	float b = 2.0 * dot(n, p0);
+	float c = dot(p0, p0) - radius * radius;
+	float disc = b * b - 4.0 * c;
+	if (disc < 0) return false;
+	float t1 = (-b + sqrt(disc)) * 0.5;
+	return t1 >= 0.0;
 }
 
-// analytic density ratio integral (for Rg = 6360000)
-float dri(float H, float r, float theta) {
-	theta = abs(theta);
-	float magic = 0.0;
-	// piecewise function fitted in matlab
-	if (theta < M_PI * 0.5) {
-		magic += magic_term(1.303e13, 5.627, 0.7397, theta);
-		magic += magic_term(5.03, 2.238, 0.7728, theta);
-		magic += magic_term(0.2276, 0.9542, 0.4843, theta);
-	} else {
-		theta -= M_PI * 0.5;
-		magic += magic_term(-56.31, 0.4758, 0.1257, theta);
-		magic += magic_term(13.99, 0.3213, 0.0009591, theta);
-		magic += magic_term(6.829e16, 8.512, 1.39, theta);
+float dritab_eval(float h0, float r, float mu) {
+	float u = pow(h0 / (Rg * H0_MAX), 1.0 / 3.0);
+	float v = 0.5 + 0.5 * mu;
+	float t = texture2D(sampler_dritab, vec2(u, v)).r;
+	t = min(t, 85.0); // infinities cause problems, 87 ~= log(1e38), close to max ieee 32-bit float value
+	// texture stores log
+	return Rg * exp(t + (RC - r / Rg) / h0 * Rg);
+}
+
+// density ratio integral over finite path
+float dri(float h0, vec3 pa_v, vec3 pb_v) {
+	float ra = distance(pa_v, planetpos_v);
+	float rb = distance(pb_v, planetpos_v);
+	if (rb < ra) {
+		// need pa to be lower
+		vec3 temp0 = pa_v;
+		pa_v = pb_v;
+		pb_v = temp0;
+		float temp1 = ra;
+		ra = rb;
+		rb = temp1;
 	}
-	return H * exp((Rg - r) / H) * exp(magic);
+	vec3 n_v = normalize(pb_v - pa_v);
+	return abs(dritab_eval(h0, ra, dot(pa_v - planetpos_v, n_v) / ra) - dritab_eval(h0, rb, dot(pb_v - planetpos_v, n_v) / rb));
 }
 
-vec3 transmittance_Mk3(float r, float mu) {
-	float theta = acos(mu);
-	return exp(-betaR * dri(HR, r, theta) - 1.1 * betaM * dri(HM, r, theta));
+// density ratio integral over infinite path
+float dri_n(float h0, vec3 pa_v, vec3 n_v) {
+	float ra = distance(pa_v, planetpos_v);
+	return dritab_eval(h0, ra, dot(pa_v - planetpos_v, n_v) / ra);
 }
 
-vec3 transmittance_Mk3(vec3 pp, vec3 pa, vec3 pb) {
-	float d = distance(pa, pb);
-	if (d < 50.0) return vec3(1.0);
-	vec3 n = normalize(pb - pa);
-	pa -= pp;
-	pb -= pp;
-	
-	//vec3 foo = vec3(1.0, 0.0, 0.0);
-	
-	if (length(pb) < length(pa)) {
-		// we want the lookup rays to point up if possible
-		vec3 temp = pa;
-		pa = pb;
-		pb = temp;
-		n = -n;
-		
-		//foo = vec3(0.0, 0.0, 1.0);
-	}
-	float mu_a = dot(normalize(pa), n);
-	float mu_b = dot(normalize(pb), n);
-	//if (d < 100.0) return analyticTransmittance(length(pa) + 5.0, mu_a, d);
-	vec3 trans_a = clamp(transmittance_Mk3(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
-	vec3 trans_b = clamp(transmittance_Mk3(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
-	return clamp(trans_a / trans_b, vec3(0.0), vec3(1.0));
+// optical thickness over finite path
+vec3 thickness(vec3 pa_v, vec3 pb_v) {
+	return beta0_r * dri(h0_r, pa_v, pb_v) + 1.1 * beta0_m * dri(h0_m, pa_v, pb_v);
 }
 
-vec3 transmittance(vec3 pp, vec3 pa, vec3 pb) {
-	float d = distance(pa, pb);
-	if (d < 1000.0) return vec3(1.0);
-	vec3 n = normalize(pb - pa);
-	pa -= pp;
-	pb -= pp;
-	
-	//vec3 foo = vec3(1.0, 0.0, 0.0);
-	
-	if (length(pb) < length(pa)) {
-		// we want the lookup rays to point up if possible
-		vec3 temp = pa;
-		pa = pb;
-		pb = temp;
-		n = -n;
-		
-		//foo = vec3(0.0, 0.0, 1.0);
-	}
-	float mu_a = dot(normalize(pa), n);
-	float mu_b = dot(normalize(pb), n);
-	//if (d < 100.0) return analyticTransmittance(length(pa) + 5.0, mu_a, d);
-	vec3 trans_a = clamp(transmittance(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
-	vec3 trans_b = clamp(transmittance(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
-	return clamp(trans_a / trans_b, vec3(0.0), vec3(1.0));
+// optical thickness over infinite path
+vec3 thickness_n(vec3 pa_v, vec3 n_v) {
+	return beta0_r * dri_n(h0_r, pa_v, n_v) + 1.1 * beta0_m * dri_n(h0_m, pa_v, n_v);
 }
 
-// this works in pseudo-world space
-vec3 transmittance_naive(vec3 pa, vec3 pb, vec3 n) {
-	float mu_a = dot(normalize(pa), n);
-	float mu_b = dot(normalize(pb), n);
-	vec3 trans_a = clamp(transmittance(length(pa) + 5.0, mu_a), vec3(0.0), vec3(1.0));
-	vec3 trans_b = clamp(transmittance(length(pb) + 5.0, mu_b), vec3(0.0), vec3(1.0));
-	return clamp(trans_a / trans_b, vec3(0.0), vec3(1.0));
+float phase_r(float mu) {
+	return 3.0 / (16.0 * PI) * (1.0 + mu * mu);
 }
 
-vec3 transmittance_Mk2(vec3 pp, vec3 pa, vec3 pb) {
-	float d = distance(pa, pb);
-	if (d < 10.0) return vec3(1.0);
-	vec3 n = normalize(pb - pa);
-	pa -= pp;
-	pb -= pp;
-	
-	// lookup both ways, then take the biggest
-	vec3 trans_ab = transmittance_naive(pa, pb, n);
-	vec3 trans_ba = transmittance_naive(pb, pa, -n);
-	
-	return max(trans_ab, trans_ba);
-	
-	//if (distance(trans_ab, vec3(0.8)) < distance(trans_ba, vec3(0.8))) return trans_ab;
-	//else return trans_ba;
+float phase_m(float mu) {
+	float g = 0.8;
+	return 3.0 * (1.0 - g * g) * (1.0 + mu * mu) / (8.0 * PI * (2.0 + g * g) * pow(1.0 + g * g - 2.0 * g * mu, 1.5));
 }
 
 void main() {
@@ -187,10 +151,7 @@ void main() {
 	// init; we might not enter the atmosphere
 	vec3 L = vec3(0.0);
 	vec3 att = vec3(1.0);
-	vec3 att_sun = vec3(1.0);
-	vec3 L1sun = ISun;
-	vec3 L1irr = vec3(0.0);
-
+	
 	bool hit_atmos = true;
 	if (length(planetpos_v) > Rt + 5.0) {
 		// camera not in atmosphere, find entrance
@@ -207,55 +168,63 @@ void main() {
 	
 	//hit_atmos = false;
 	
+	bool hit_planet = false;
 	if (hit_atmos) {
 		// entered the atmosphere
 		if (intersect(planetpos_v, Rg, p0, dp, p1)) {
 			// hit planet
+			hit_planet = true;
 			if (fragdist > length(p1)) { // TODO adjust epsilon
-				// fragment behind planet surface
+				// fragment behind planet surface, replace with planet surface
 				// TODO properly?
-				tag = 0;
+				tag = 0.0;
 				diffuse = vec4(0.0, 0.05, 0.0, 0.0);
 				pos_v = p1;
 				norm_v = normalize(pos_v - planetpos_v);
 			}
 		} else {
 			// missed planet, find exit from atmosphere
-			// this should always succeed...
-			intersect(planetpos_v, Rt, p0 + 100.0 * dp, dp, p1); // TODO adjust epsilon
+			p1 = p0; // just in case...
+			intersect(planetpos_v, Rt, p0 + 50.0 * dp, dp, p1); // TODO adjust epsilon
 		}
 		if (fragdist <= length(p1)) {
 			// fragment is closer
 			p1 = pos_v;
 		}
 
-		float mu_vs = dot(dp, sunnorm_v);
-		float Pr = phaseFunctionR(mu_vs);
-		float Pm = phaseFunctionM(mu_vs);
+		// integrate inscatter over path...
 
-		float r0 = max(length(p0 - planetpos_v), Rg + 5.0);
-		float r1 = max(length(p1 - planetpos_v), Rg + 5.0);
-		
-		float mu0_vx = dot(dp, normalize(p0 - planetpos_v));
-		float mu0_sx = dot(sunnorm_v, normalize(p0 - planetpos_v));
-		
-		float mu1_vx = dot(dp, normalize(p1 - planetpos_v));
-		float mu1_sx = dot(sunnorm_v, normalize(p1 - planetpos_v));
-		
-		att = transmittance(planetpos_v, p0, p1);
+		vec3 pa = p0;
+		vec3 pb = p0;
 
-		att_sun = clamp(transmittance(r0, mu0_sx), vec3(0.0), vec3(1.0));
+		float min_x = 50.0 + distance(p0, p1) / 50.0;
 
-		vec4 insc0 = max(texture4D(sampler_inscatter, r0, mu0_vx, mu0_sx, mu_vs), vec4(0.0));
-		vec4 insc1 = max(texture4D(sampler_inscatter, r1, mu1_vx, mu1_sx, mu_vs), vec4(0.0));
+		float xx = 0.0;
+		float xx_max = distance(p0, p1) - 10.0;
+		vec3 th_cam = vec3(0.0);
+
+		float mu = dot(sunnorm_v, dp);
+		float phr = phase_r(mu);
+		float phm = phase_m(mu);
+
+		for(; xx < xx_max; pa = pb) {
+			float ra = distance(pa, planetpos_v);
+			// end point of this segment
+			float x = min_x + 2.5 * h0_r * (1.0 - exp(0.5 * (Rg - ra) / h0_r));
+			x = min(xx_max - xx, x);
+			xx += x;
+			pb = pa + dp * x;
+
+			th_cam += thickness(pa, pb);
+			att = exp(-th_cam);
+
+			vec3 Lsun = ISun * exp(-thickness_n(pa, sunnorm_v));
+
+			L += att * x * Lsun * (beta0_r * exp((Rg - ra) / h0_r) * phr + beta0_m * exp((Rg - ra) / h0_m) * phm);
+		}
+
+
 		
-		vec4 insc = max(insc0 - att.rgbr * insc1, vec4(0.0));
-		
-		// TODO shadow test in transmittance here
-		L1sun = ISun * clamp(transmittance(r1, mu1_sx), vec3(0.0), vec3(1.0));
-		L1irr = ISun * irradiance(sampler_irradiance, r1, mu1_sx);
-		
-		L = max(insc.rgb * Pr + getMie(insc) * Pm, vec3(0.0)) * ISun;
 	}
 
 	// reflected light
@@ -264,9 +233,10 @@ void main() {
 		// eg nice water
 	} else {
 		// normal operation
-		vec3 L1a = L1irr * diffuse.rgb;
+		vec3 Lsun = ISun * exp(-thickness_n(pos_v, sunnorm_v));
+		vec3 L1a = vec3(0.0) * diffuse.rgb;
 		float dot_d = dot(sunnorm_v, norm_v);
-		vec3 L1d = L1sun * max(dot_d, 0.0) * diffuse.rgb;
+		vec3 L1d = Lsun * max(dot_d, 0.0) * diffuse.rgb;
 		vec3 L1s = vec3(0.0);
 		if (dot_d > 0) {
 			// TODO specular
@@ -278,8 +248,8 @@ void main() {
 	L += L1 * att;
 	
 	// direct light from the sun
-	if (dot(sunnorm_v, dp) > 0.9999905) {
-		L += ISun * att_sun;
+	if (tag < 0.0 && !hit_planet && dot(sunnorm_v, dp) > 0.9999905) {
+		L += ISun * att;
 	}
 
 	gl_FragColor = vec4(hdr(L), 1.0);

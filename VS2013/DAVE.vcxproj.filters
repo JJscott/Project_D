@@ -17,6 +17,9 @@
       <UniqueIdentifier>{a29bc709-75bf-4ec3-aa8c-cba18b6633e9}</UniqueIdentifier>
       <Extensions>vert;frag;geom</Extensions>
     </Filter>
+    <Filter Include="Shaders\atmos">
+      <UniqueIdentifier>{12638861-60e8-452a-8976-9eeded747266}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shader\deferred.frag">
@@ -54,6 +57,12 @@
     </None>
     <None Include="..\shader\test.frag">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\shader\atmos\dritab.frag">
+      <Filter>Shaders\atmos</Filter>
+    </None>
+    <None Include="..\shader\atmos\precomp.vert">
+      <Filter>Shaders\atmos</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
