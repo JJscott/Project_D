@@ -34,8 +34,8 @@ void foo();
 #include "tree.h"
 #include "nnntt.h"
 
-#define DAVE_TERRAIN
-#define DAVE_TREE
+//#define DAVE_TERRAIN
+//#define DAVE_TREE
 
 // james project stuff
 //#include "netcam.h"

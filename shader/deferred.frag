@@ -7,7 +7,7 @@
 
 const vec3 ISun = vec3(1.5);
 
-const vec3 beta0_r = vec3(5.47e-6, 1.28e-5, 3.12e-5);
+const vec3 beta0_r = vec3(7.196e-6, 1.461e-5, 2.983e-5);
 const vec3 beta0_m = vec3(0.000021);
 
 const float h0_r = 7994.0;
@@ -117,12 +117,12 @@ vec3 thickness_n(vec3 pa_v, vec3 n_v) {
 }
 
 float phase_r(float mu) {
-	return 3.0 / (16.0 * PI) * (1.0 + mu * mu);
+	return (3.0 / (16.0 * PI)) * (1.0 + mu * mu);
 }
 
 float phase_m(float mu) {
-	float g = 0.8;
-	return 3.0 * (1.0 - g * g) * (1.0 + mu * mu) / (8.0 * PI * (2.0 + g * g) * pow(1.0 + g * g - 2.0 * g * mu, 1.5));
+	const float g = 0.8;
+	return (3.0 * (1.0 - g * g) / (8.0 * PI * (2.0 + g * g))) * (1.0 + mu * mu) / pow(1.0 + g * g - 2.0 * g * mu, 1.5);
 }
 
 void main() {
@@ -197,6 +197,9 @@ void main() {
 		vec3 pa = p0;
 		vec3 pb = p0;
 
+		float ra = distance(pa, planetpos_v);
+		float rb = ra;
+
 		float min_x = 50.0 + distance(p0, p1) / 50.0;
 
 		float xx = 0.0;
@@ -207,20 +210,20 @@ void main() {
 		float phr = phase_r(mu);
 		float phm = phase_m(mu);
 
-		for(; xx < xx_max; pa = pb) {
-			float ra = distance(pa, planetpos_v);
+		for(; xx < xx_max; pa = pb, ra = rb) {
 			// end point of this segment
 			float x = min_x + 2.5 * h0_r * (1.0 - exp(0.5 * (Rg - ra) / h0_r));
 			x = min(xx_max - xx, x);
 			xx += x;
 			pb = pa + dp * x;
+			float rb = distance(pb, planetpos_v);
 
 			th_cam += thickness(pa, pb);
 			att = exp(-th_cam);
 
-			vec3 Lsun = ISun * exp(-thickness_n(pa, sunnorm_v));
+			vec3 Lsun = ISun * exp(-thickness_n(pb, sunnorm_v));
 
-			L += att * x * Lsun * (beta0_r * exp((Rg - ra) / h0_r) * phr + beta0_m * exp((Rg - ra) / h0_m) * phm);
+			L += att * x * Lsun * (beta0_r * exp((Rg - rb) / h0_r) * phr + beta0_m * exp((Rg - rb) / h0_m) * phm);
 		}
 
 
