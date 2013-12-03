@@ -102,5 +102,5 @@ void main() {
 	float mu, muS, nu;
 	getMuMuSNu(r, dhdH, mu, muS, nu);
 	inscatter(r, mu, muS, nu, raymie);
-	gl_FragColor = vec4(raymie, 0f);
+	gl_FragColor = vec4(raymie, 0.0);
 }

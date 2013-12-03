@@ -93,7 +93,7 @@ vec4 texture4D(sampler3D table, float r, float mu, float muS, float nu) {
 	// TODO fix this in inscatter_multiple_a, somehow...
 	// this may have been caused by a nan bug in my transmittance table?
 	float nan_test = dot(t3da, t3db);
-	if (!(nan_test == nan_test)) return vec4(0f);
+	if (!(nan_test == nan_test)) return vec4(0.0);
 
 	return t3da * (1.0 - lerp) + t3db * lerp;
 }

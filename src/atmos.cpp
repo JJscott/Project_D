@@ -406,9 +406,13 @@ namespace atmos {
 			cout << "Multiple scattering order " << order << "..." << endl;
 			// this _is_ the right order
 			do_inscatter_multiple_a(order == 2, tex_deltaJ);
+			glFinish();
 			do_irradiance_multiple(order == 2, tex_deltaE);
+			glFinish();
 			do_inscatter_multiple_b(tex_deltaSR);
+			glFinish();
 			copy_irradiance();
+			glFinish();
 			copy_inscatter_multiple();
 			glFinish();
 		}

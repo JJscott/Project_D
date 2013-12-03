@@ -17,7 +17,7 @@ void main() {
 	getIrradianceRMuS(r, muS);
 	vec3 s = vec3(max(sqrt(1.0 - muS * muS), 0.0), 0.0, muS);
 
-	vec3 result = vec3(0f, 0f, 0f);
+	vec3 result = vec3(0.0);
 	// integral over 2.PI around x with two nested loops over w directions (theta,phi) -- Eq (15)
 	for (int iphi = 0; iphi < 2 * IRRADIANCE_INTEGRAL_SAMPLES; ++iphi) {
 		float phi = (float(iphi) + 0.5) * dphi;

@@ -38,5 +38,5 @@ vec3 inscatter(float r, float mu, float muS, float nu) {
 void main() {
 	float mu, muS, nu;
 	getMuMuSNu(r, dhdH, mu, muS, nu);
-	gl_FragColor = vec4(inscatter(r, mu, muS, nu), 0f);
+	gl_FragColor = vec4(inscatter(r, mu, muS, nu), 0.0);
 }
