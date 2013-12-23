@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 1);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	//glfwWindowHint(GLFW_SAMPLES, 16);
 	window = glfwCreateWindow(win_width, win_height, "DAVE", NULL, NULL);
 	glfwMakeContextCurrent(window);
