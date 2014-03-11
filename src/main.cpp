@@ -66,8 +66,8 @@ hrtime_t last_frame;
 
 // window / projection
 GLFWwindow *window;
-int win_width = 512, win_height = 512;
-double fov_y = 30;
+int win_width = 848, win_height = 480;
+double fov_y = 20;
 float zfar = 10000000;
 
 float exposure;
@@ -107,10 +107,11 @@ void switchCamera() {
 void initAwesome() {
 	// init camera
 	if (camera != NULL) delete camera;
-	camera = new FPSCamera(window, vec3d(-4314, Rg + 2830, 21957));
-	
+	//camera = new FPSCamera(window, vec3d(-4314, Rg + 2830, 21957));
+	camera = new FPSCamera(window, vec3d(0, Rg + 500, 0));
 	// init sun
-	sun = quatd::axisangle(vec3d::i(), -0.1) * -vec3d::k();
+	// sun = quatd::axisangle(vec3d::i(), -0.1) * -vec3d::k();
+	sun = ~vec3d(0, 0.1, -1);
 	
 	exposure = 20;
 	

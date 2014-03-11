@@ -8,7 +8,7 @@
 const vec3 ISun = vec3(1.5);
 
 const vec3 beta0_r = vec3(7.196e-6, 1.461e-5, 2.983e-5);
-const vec3 beta0_m = vec3(0.000021);
+const vec3 beta0_m = vec3(0.00002);
 
 const float h0_r = 7994.0;
 const float h0_m = 1200.0;
@@ -121,8 +121,8 @@ float phase_r(float mu) {
 }
 
 float phase_m(float mu) {
-	const float g = 0.8;
-	return (3.0 * (1.0 - g * g) / (8.0 * PI * (2.0 + g * g))) * (1.0 + mu * mu) / pow(1.0 + g * g - 2.0 * g * mu, 1.5);
+	const float g = 0.75;
+	return 3.0 * (1.0 - g * g) * (1.0 + mu * mu) / (8.0 * PI * (2.0 + g * g) * pow(1.0 + g * g - 2.0 * g * mu, 1.5));
 }
 
 void main() {
@@ -200,7 +200,7 @@ void main() {
 		float ra = distance(pa, planetpos_v);
 		float rb = ra;
 
-		float min_x = 50.0 + distance(p0, p1) / 50.0;
+		float min_x = 50.0 + distance(p0, p1) / 65.0;
 
 		float xx = 0.0;
 		float xx_max = distance(p0, p1) - 10.0;
@@ -210,23 +210,26 @@ void main() {
 		float phr = phase_r(mu);
 		float phm = phase_m(mu);
 
-		for(; xx < xx_max; pa = pb, ra = rb) {
+		for(; xx < xx_max;) {
 			// end point of this segment
-			float x = min_x + 2.5 * h0_r * (1.0 - exp(0.5 * (Rg - ra) / h0_r));
-			x = min(xx_max - xx, x);
+			float x = min_x; // + 2.5 * h0_r * (1.0 - exp(0.5 * (Rg - ra) / h0_r));
+			x = min(xx_max - xx + 5.0, x);
 			xx += x;
 			pb = pa + dp * x;
 			float rb = distance(pb, planetpos_v);
 
-			th_cam += thickness(pa, pb);
 			att = exp(-th_cam);
+			th_cam += thickness(pa, pb);
 
-			vec3 Lsun = ISun * exp(-thickness_n(pb, sunnorm_v));
+			vec3 Lsun = ISun * exp(-thickness_n(pa, sunnorm_v));
 
-			L += att * x * Lsun * (beta0_r * exp((Rg - rb) / h0_r) * phr + beta0_m * exp((Rg - rb) / h0_m) * phm);
+			L += att * x * Lsun * ((beta0_r * exp((Rg - ra) / h0_r) * phr) + (beta0_m * exp((Rg - ra) / h0_m) * phm));
+			
+			pa = pb;
+			ra = rb;
 		}
 
-
+		att = exp(-th_cam);
 		
 	}
 
@@ -255,5 +258,5 @@ void main() {
 		L += ISun * att;
 	}
 
-	gl_FragColor = vec4(hdr(L), 1.0);
+	gl_FragColor.rgb = hdr(L);
 }
