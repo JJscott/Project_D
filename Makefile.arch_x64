@@ -26,8 +26,8 @@ LIBS = -lm -lGL -lGLU -lglfw3 -lX11 -lXrandr -lXxf86vm -lXi -lpthread
 # compiler, flags, include / lib paths
 CC = g++
 RM = rm
-CFLAGS_DEBUG = -g -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-long-long
-CFLAGS_RELEASE = -O2 -DNDEBUG
+CFLAGS_DEBUG = -std=c++11 -g -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-long-long
+CFLAGS_RELEASE = -std=c++11 -O2 -DNDEBUG
 IPATH = -I/usr/X11/include -I/usr/pkg/include -I$(DIR_INCLUDE)
 LPATH = -L/usr/X11/lib -L/usr/pkg/lib -L$(DIR_LIB)
 LDPATH = -Wl,-R/usr/pkg/lib
@@ -71,11 +71,11 @@ endif
 # dependency generation
 $(DIR_DEBUG)%.d: $(DIR_SRC)%
 	@mkdir -p $(DIR_DEBUG)
-	$(CC) -MM -MG -MP -MF $@ $^ -MT $(DIR_DEBUG)$*.o
+	$(CC) $(CFLAGS_DEBUG) -MM -MG -MP -MF $@ $^ -MT $(DIR_DEBUG)$*.o
 
 $(DIR_RELEASE)%.d: $(DIR_SRC)%
 	@mkdir -p $(DIR_RELEASE)
-	$(CC) -MM -MG -MP -MF $@ $^ -MT $(DIR_RELEASE)$*.o
+	$(CC) $(CFLAGS_RELEASE) -MM -MG -MP -MF $@ $^ -MT $(DIR_RELEASE)$*.o
 
 # source compilation
 $(DIR_DEBUG)%.o:

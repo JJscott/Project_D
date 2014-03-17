@@ -7,12 +7,8 @@
 #include "initial3d.h"
 #include "terrainsim.h"
 
-using initial3d::math::max;
-using initial3d::math::min;
-
 using namespace std;
 using namespace initial3d;
-
 
 struct GGen_OutflowValues{
     double top;
@@ -262,28 +258,28 @@ void ErosionSimulator::ApplyFlowSimulation(double* heightMap, double* waterMap, 
             {
                 double heightDifference = currentHeight + waterMapCopy[currentIndex] - heightMap[currentIndex - 1] - waterMapCopy[currentIndex - 1];
                 double flowValue = outflowFluxMap[currentIndex].left + this->deltaT * this->pipeCrossectionArea * (this->graviationalAcceleration * heightDifference) / this->pipeLength;
-                outflowFluxMap[currentIndex].left = max(0.0, flowValue);
+                outflowFluxMap[currentIndex].left = math::max(0.0, flowValue);
             }
 
             if(x + 1 < this->width)
             {
                 double heightDifference = currentHeight + waterMapCopy[currentIndex] - heightMap[currentIndex + 1] - waterMapCopy[currentIndex + 1];
                 double flowValue = outflowFluxMap[currentIndex].right + this->deltaT * this->pipeCrossectionArea * (this->graviationalAcceleration * heightDifference) / this->pipeLength;
-                outflowFluxMap[currentIndex].right = max(0.0, flowValue);
+                outflowFluxMap[currentIndex].right = math::max(0.0, flowValue);
             }
 
             if(y > 0)
             {
                 double heightDifference = currentHeight + waterMapCopy[currentIndex] - heightMap[currentIndex - this->width] - waterMapCopy[currentIndex - this->width];
                 double flowValue = outflowFluxMap[currentIndex].top + this->deltaT * this->pipeCrossectionArea * (this->graviationalAcceleration * heightDifference) / this->pipeLength;
-                outflowFluxMap[currentIndex].top = max(0.0, flowValue);
+                outflowFluxMap[currentIndex].top = math::max(0.0, flowValue);
             }
 
             if(y + 1 < this->height)
             {
                 double heightDifference = currentHeight + waterMapCopy[currentIndex] - heightMap[currentIndex + this->width] - waterMapCopy[currentIndex + this->width];
                 double flowValue = outflowFluxMap[currentIndex].bottom + this->deltaT * this->pipeCrossectionArea * (this->graviationalAcceleration * heightDifference) / this->pipeLength;
-                outflowFluxMap[currentIndex].bottom = max(0.0, flowValue);
+                outflowFluxMap[currentIndex].bottom = math::max(0.0, flowValue);
             }
 
             // Scale the outflow values so sum(outflow) < amount of water in this tile.
@@ -298,7 +294,7 @@ void ErosionSimulator::ApplyFlowSimulation(double* heightMap, double* waterMap, 
 
 
             if(sumOutflow > waterMap[currentIndex]){
-                double factor = min(1.0, waterMap[currentIndex] * this->pipeLength * this->pipeLength / (sumOutflow * this->deltaT));
+                double factor = math::min(1.0, waterMap[currentIndex] * this->pipeLength * this->pipeLength / (sumOutflow * this->deltaT));
 
                 outflowFluxMap[currentIndex].left *= factor;
                 outflowFluxMap[currentIndex].right *= factor;
@@ -334,7 +330,7 @@ void ErosionSimulator::ApplyFlowSimulation(double* heightMap, double* waterMap, 
             double oldWaterLevel =  waterMapCopy[currentIndex];
             double newWaterLevel = waterMapCopy[currentIndex] + (this->deltaT * (sumInflow - sumOutflow)) / (this->pipeLength * this->pipeLength);
 
-            waterMap[currentIndex] = max(0.0, newWaterLevel);
+            waterMap[currentIndex] = math::max(0.0, newWaterLevel);
 
             if(velocityVectorMap == NULL) {
                 continue;
@@ -521,7 +517,7 @@ void ErosionSimulator::ApplyErosion( double* heightMap, double* waterMap, GGen_V
                 surfaceTilt = 0;
             }
 
-            surfaceTilt = max(0.2, surfaceTilt);
+            surfaceTilt = math::max(0.2, surfaceTilt);
 
             double sedimentCapacity = this->sedimentCapacityConstant * surfaceTilt * velocityVectorLength;
             double sedimentToMove = 0;
@@ -738,14 +734,14 @@ void ErosionSimulator::ApplyThermalWeathering(double* heightMap, double powerMul
             }
 
             double maxHeightDiff = 0;
-            maxHeightDiff = max(maxHeightDiff, heightDiffTopLeft);
-            maxHeightDiff = max(maxHeightDiff, heightDiffTop);
-            maxHeightDiff = max(maxHeightDiff, heightDiffTopRight);
-            maxHeightDiff = max(maxHeightDiff, heightDiffRight);
-            maxHeightDiff = max(maxHeightDiff, heightDiffBottomLeft);
-            maxHeightDiff = max(maxHeightDiff, heightDiffBottom);
-            maxHeightDiff = max(maxHeightDiff, heightDiffBottomRight);
-            maxHeightDiff = max(maxHeightDiff, heightDiffLeft);
+            maxHeightDiff = math::max(maxHeightDiff, heightDiffTopLeft);
+            maxHeightDiff = math::max(maxHeightDiff, heightDiffTop);
+            maxHeightDiff = math::max(maxHeightDiff, heightDiffTopRight);
+            maxHeightDiff = math::max(maxHeightDiff, heightDiffRight);
+            maxHeightDiff = math::max(maxHeightDiff, heightDiffBottomLeft);
+            maxHeightDiff = math::max(maxHeightDiff, heightDiffBottom);
+            maxHeightDiff = math::max(maxHeightDiff, heightDiffBottomRight);
+            maxHeightDiff = math::max(maxHeightDiff, heightDiffLeft);
 
             if(maxHeightDiff < this->talusAngle)
             {
