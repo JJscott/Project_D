@@ -37,9 +37,6 @@ void foo();
 //#define DAVE_TERRAIN
 //#define DAVE_TREE
 
-// james project stuff
-//#include "netcam.h"
-
 using namespace std;
 using namespace initial3d;
 
@@ -95,13 +92,9 @@ int camtype = 0;
 void switchCamera() {
 
 	if (camera != NULL) delete camera;
-	if (camtype == 0) {
-		//camera = new NetworkCamera();
-		camtype = 1;
-	} else {
-		camera = new FPSCamera(window, vec3d(0, Rg + 100, 0));
-		camtype = 0;
-	}
+	camera = new FPSCamera(window, vec3d(0, Rg + 100, 0));
+	camtype = 0;
+
 }
 
 void initAwesome() {
@@ -111,9 +104,9 @@ void initAwesome() {
 	camera = new FPSCamera(window, vec3d(0, Rg + 500, 0));
 	// init sun
 	// sun = quatd::axisangle(vec3d::i(), -0.1) * -vec3d::k();
-	sun = ~vec3d(0, 0.1, -1);
+	sun = ~vec3d(0, 0.0, -1);
 	
-	exposure = 20;
+	exposure = 26;
 	
 	sun_moving = false;
 }
@@ -173,6 +166,7 @@ public:
 			sun_moving = !sun_moving;
 		}
 		//cout << +cam_pos << endl;
+		sun = ~sun;
 	}
 };
 
@@ -392,6 +386,7 @@ void display() {
 	// move sun
 	if (sun_moving) {
 		sun = quatd::axisangle(vec3d::i(), delta_t * math::pi() / 600) * sun;
+		sun = ~sun;
 	}
 	
 	camera->update();

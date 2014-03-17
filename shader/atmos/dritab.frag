@@ -61,6 +61,6 @@ void main() {
 	float h0 = pow(gl_FragCoord.x / float(RES_H0), 3.0) * H0_MAX;
 	float mu = gl_FragCoord.y / float(RES_MU) * 2.0 - 1.0;
 	float log_dri = log(densityRatioIntegral(1.0, RT, h0, RC, acos(mu)));
-	gl_FragColor.r = -1.0e10;
-	if (log_dri == log_dri) gl_FragColor.r = log_dri;
+	if (log_dri != log_dri) log_dri = 0;
+	gl_FragColor.r = log_dri;
 }

@@ -80,7 +80,7 @@ float dritab_eval(float h0, float r, float mu) {
 	float t = texture2D(sampler_dritab, vec2(u, v)).r;
 	t = min(t, 85.0); // infinities cause problems, 87 ~= log(1e38), close to max ieee 32-bit float value
 	// texture stores log
-	return Rg * exp(t + (RC - r / Rg) / h0 * Rg);
+	return Rg * exp(t + (RC - r / Rg) / (h0 / Rg));
 }
 
 // density ratio integral over finite path
@@ -97,13 +97,13 @@ float dri(float h0, vec3 pa_v, vec3 pb_v) {
 		rb = temp1;
 	}
 	vec3 n_v = normalize(pb_v - pa_v);
-	return abs(dritab_eval(h0, ra, dot(pa_v - planetpos_v, n_v) / ra) - dritab_eval(h0, rb, dot(pb_v - planetpos_v, n_v) / rb));
+	return abs(dritab_eval(h0, ra, dot(normalize(pa_v - planetpos_v), n_v)) - dritab_eval(h0, rb, dot(normalize(pb_v - planetpos_v), n_v)));
 }
 
 // density ratio integral over infinite path
 float dri_n(float h0, vec3 pa_v, vec3 n_v) {
 	float ra = distance(pa_v, planetpos_v);
-	return dritab_eval(h0, ra, dot(pa_v - planetpos_v, n_v) / ra);
+	return dritab_eval(h0, ra, dot(normalize(pa_v - planetpos_v), n_v));
 }
 
 // optical thickness over finite path
@@ -210,6 +210,9 @@ void main() {
 		float phr = phase_r(mu);
 		float phm = phase_m(mu);
 
+		// potential optimisation to avoid 2 thickness lookups per sample:
+		// do reverse lookups until horizon transition, forward lookups after (2 loops?)
+
 		for(; xx < xx_max;) {
 			// end point of this segment
 			float x = min_x; // + 2.5 * h0_r * (1.0 - exp(0.5 * (Rg - ra) / h0_r));
@@ -218,19 +221,17 @@ void main() {
 			pb = pa + dp * x;
 			float rb = distance(pb, planetpos_v);
 
-			att = exp(-th_cam);
-			th_cam += thickness(pa, pb);
-
 			vec3 Lsun = ISun * exp(-thickness_n(pa, sunnorm_v));
 
-			L += att * x * Lsun * ((beta0_r * exp((Rg - ra) / h0_r) * phr) + (beta0_m * exp((Rg - ra) / h0_m) * phm));
+			L += x * att * Lsun * ((beta0_r * exp((Rg - ra) / h0_r) * phr) + (beta0_m * exp((Rg - ra) / h0_m) * phm));
 			
+			// ok, the thickness calculation is screwing up (both versions)
+			att *= exp(-thickness(pa, pb));
 			pa = pb;
 			ra = rb;
 		}
 
-		att = exp(-th_cam);
-		
+		//L = att;
 	}
 
 	// reflected light
