@@ -8,8 +8,11 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cstdlib>
 #include <stdexcept>
+#include <cassert>
 
 #include "atmos.h"
 #include "shader.h"
@@ -69,7 +72,49 @@ namespace atmos {
 		glUniform1f(glGetUniformLocation(prog, "Rg"), Rg);
 		glUniform1f(glGetUniformLocation(prog, "Rt"), Rt);
 	}
-
+	
+	void load_dritab() {
+		ifstream ifs("./dritab4");
+		if (ifs.is_open()) {
+			float *data = new float[1024 * 1024];
+			
+			string version;
+			getline(ifs, version);
+			if (version != "version_1004") {
+				cout << "wrong dritab version" << endl;
+				return;
+			}
+			
+			cout << "loading dritab from file..." << endl;
+			
+			for (size_t c = 0; c < 1024; c++) {
+				for (size_t r = 0; r < 1024; r++) {
+					float *p = data + r * 1024 + c;
+					string token;
+					ifs >> token;
+					if (token == "Infinity") {
+						*p = math::inf<float>();
+					} else if (token == "NaN") {
+						*p = math::nan<float>();
+					} else {
+						istringstream iss(token);
+						iss >> *p;
+					}
+				}
+			}
+			
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1024, 1024, 0, GL_RED, GL_FLOAT, data);
+			
+			delete[] data;
+			
+			cout << "dritab loaded" << endl;
+			
+		} else {
+			cout << "failed to open dritab file" << endl;
+		}
+		
+	}
+	
 	void make_dritab() {
 		if (tex_dritab != 0) glDeleteTextures(1, &tex_dritab);
 		glGenTextures(1, &tex_dritab);
@@ -91,6 +136,11 @@ namespace atmos {
 		draw_fullscreen_quad();
 		glUseProgram(0);
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+		glFinish();
+
+		// load precomputed table
+		// load_dritab();
+		
 		glFinish();
 		check_gl();
 	}

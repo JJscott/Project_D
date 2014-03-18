@@ -226,12 +226,13 @@ void main() {
 			L += x * att * Lsun * ((beta0_r * exp((Rg - ra) / h0_r) * phr) + (beta0_m * exp((Rg - ra) / h0_m) * phm));
 			
 			// ok, the thickness calculation is screwing up (both versions)
+			// the screwup is in the table
 			att *= exp(-thickness(pa, pb));
 			pa = pb;
 			ra = rb;
 		}
 
-		//L = att;
+		// L = att;
 	}
 
 	// reflected light

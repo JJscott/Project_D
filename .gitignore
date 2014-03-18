@@ -7,6 +7,9 @@
 /debug/*
 /release/*
 
+# Precomputed Dritab
+/dritab4
+
 # System-specific Makefile
 /Makefile
 
