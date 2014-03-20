@@ -1,7 +1,7 @@
 #version 120
 
 #define H0_MAX 0.005
-#define RC 1.02
+#define RC 1.0
 
 #define PI 3.14159265
 
@@ -76,9 +76,9 @@ bool intersect(vec3 ps, float radius, vec3 p0, vec3 n) {
 
 float dritab_eval(float h0, float r, float mu) {
 	float u = pow(h0 / (Rg * H0_MAX), 1.0 / 3.0);
-	float v = 0.5 + 0.5 * mu;
+	float v = (mu + 0.05) / 1.05;
 	float t = texture2D(sampler_dritab, vec2(u, v)).r;
-	t = min(t, 85.0); // infinities cause problems, 87 ~= log(1e38), close to max ieee 32-bit float value
+	t = min(t, 85.0); // infinities can cause problems, 87 ~= log(1e38), close to max ieee 32-bit float value
 	// texture stores log
 	return Rg * exp(t + (RC - r / Rg) / (h0 / Rg));
 }
@@ -212,6 +212,7 @@ void main() {
 
 		// potential optimisation to avoid 2 thickness lookups per sample:
 		// do reverse lookups until horizon transition, forward lookups after (2 loops?)
+		// still have to do 2 lookups because varying coefs, but can get rid of branches
 
 		for(; xx < xx_max;) {
 			// end point of this segment
@@ -225,8 +226,6 @@ void main() {
 
 			L += x * att * Lsun * ((beta0_r * exp((Rg - ra) / h0_r) * phr) + (beta0_m * exp((Rg - ra) / h0_m) * phm));
 			
-			// ok, the thickness calculation is screwing up (both versions)
-			// the screwup is in the table
 			att *= exp(-thickness(pa, pb));
 			pa = pb;
 			ra = rb;
