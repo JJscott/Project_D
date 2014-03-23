@@ -34,8 +34,8 @@ void foo();
 #include "tree.h"
 #include "nnntt.h"
 
-//#define DAVE_TERRAIN
-//#define DAVE_TREE
+#define DAVE_TERRAIN
+#define DAVE_TREE
 
 using namespace std;
 using namespace initial3d;
@@ -100,11 +100,11 @@ void switchCamera() {
 void initAwesome() {
 	// init camera
 	if (camera != NULL) delete camera;
-	//camera = new FPSCamera(window, vec3d(-4314, Rg + 2830, 21957));
-	camera = new FPSCamera(window, vec3d(0, Rg + 500, 0));
+	camera = new FPSCamera(window, vec3d(-4314, Rg + 2830, 21957));
+	//camera = new FPSCamera(window, vec3d(0, Rg + 500, 0));
 	// init sun
-	// sun = quatd::axisangle(vec3d::i(), -0.1) * -vec3d::k();
-	sun = ~vec3d(0, 0.0, -1);
+	sun = quatd::axisangle(vec3d::i(), -0.1) * -vec3d::k();
+	//sun = ~vec3d(0, 0.0, -1);
 	
 	exposure = 26;
 	
@@ -385,7 +385,7 @@ void display() {
 	
 	// move sun
 	if (sun_moving) {
-		sun = quatd::axisangle(vec3d::i(), delta_t * math::pi() / 600) * sun;
+		sun = quatd::axisangle(vec3d::i(), delta_t * math::pi() / 2000) * sun;
 		sun = ~sun;
 	}
 	

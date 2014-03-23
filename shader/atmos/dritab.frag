@@ -1,11 +1,14 @@
 #version 120
 
-#define SAMPLES 1000
+// this is sensitive in single precision (1000 looks worse than 500)
+#define SAMPLES 300
 
 #define H0_MAX 0.005
 #define RT 1.1
-// dont use RC > 1.0 when working in float
-#define RC 1.0
+// dont use RC > 1.0 when working in float (1.02 breaks earth mie scatter)
+#define RC 1.0002
+
+// for 1024 mu samples, using 1.0 >= mu >= -0.05 doesnt seem to be an improvement over 1.0 >= mu >= -1.0
 
 uniform int RES_H0;
 uniform int RES_MU;
@@ -60,7 +63,7 @@ float densityRatioIntegral(float rg, float rt, float h0, float r, float theta) {
 
 void main() {
 	float h0 = pow(gl_FragCoord.x / float(RES_H0), 3.0) * H0_MAX;
-	float mu = gl_FragCoord.y / float(RES_MU) * 1.05 - 0.05;
+	float mu = gl_FragCoord.y / float(RES_MU) * 2.0 - 1.0;
 	float log_dri = log(densityRatioIntegral(1.0, RT, h0, RC, acos(mu)));
 	if (log_dri != log_dri) log_dri = 0;
 	gl_FragColor.r = log_dri;

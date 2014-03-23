@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <cassert>
+#include <ctime>
 
 #include "atmos.h"
 #include "shader.h"
@@ -71,6 +72,11 @@ namespace atmos {
 	void setCommon(GLuint prog) {
 		glUniform1f(glGetUniformLocation(prog, "Rg"), Rg);
 		glUniform1f(glGetUniformLocation(prog, "Rt"), Rt);
+
+		clock_t c = clock() % CLOCKS_PER_SEC;
+		float t = float(c) / float(CLOCKS_PER_SEC);
+		glUniform1f(glGetUniformLocation(prog, "time"), t);
+
 	}
 	
 	void load_dritab() {
@@ -80,7 +86,7 @@ namespace atmos {
 			
 			string version;
 			getline(ifs, version);
-			if (version != "version_1004") {
+			if (version != "version_1006") {
 				cout << "wrong dritab version" << endl;
 				return;
 			}

@@ -1,7 +1,8 @@
 #version 120
 
 #define H0_MAX 0.005
-#define RC 1.0
+// RC == 1.01 for dritab4 v1006
+#define RC 1.0002
 
 #define PI 3.14159265
 
@@ -12,6 +13,8 @@ const vec3 beta0_m = vec3(0.00002);
 
 const float h0_r = 7994.0;
 const float h0_m = 1200.0;
+
+uniform float time;
 
 // planet radius
 uniform float Rg;
@@ -76,7 +79,7 @@ bool intersect(vec3 ps, float radius, vec3 p0, vec3 n) {
 
 float dritab_eval(float h0, float r, float mu) {
 	float u = pow(h0 / (Rg * H0_MAX), 1.0 / 3.0);
-	float v = (mu + 0.05) / 1.05;
+	float v = (mu + 1.0) * 0.5;
 	float t = texture2D(sampler_dritab, vec2(u, v)).r;
 	t = min(t, 85.0); // infinities can cause problems, 87 ~= log(1e38), close to max ieee 32-bit float value
 	// texture stores log
@@ -210,7 +213,7 @@ void main() {
 		float phr = phase_r(mu);
 		float phm = phase_m(mu);
 
-		// potential optimisation to avoid 2 thickness lookups per sample:
+		// potential optimisation for thickness lookups:
 		// do reverse lookups until horizon transition, forward lookups after (2 loops?)
 		// still have to do 2 lookups because varying coefs, but can get rid of branches
 
@@ -259,5 +262,10 @@ void main() {
 		L += ISun * att;
 	}
 
-	gl_FragColor.rgb = hdr(L);
+	// holy shit this function is brilliant
+	// http://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
+	float junk = fract(sin(dot(gl_FragCoord.xy + time, vec2(12.9898, 78.233))) * 43758.5453);
+	// gl_FragColor.rgb = vec3(junk);
+
+	gl_FragColor.rgb = hdr(L) + vec3((junk - 0.5) / 127.0);
 }
