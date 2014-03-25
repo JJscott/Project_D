@@ -2,12 +2,13 @@
 
 // this is sensitive in single precision (1000 looks worse than 500, 10000 is really bad)
 // TODO whyyyyyyyyyyyyyy?
-#define SAMPLES 500
+#define SAMPLES 300
 
 #define H0_MAX 0.005
 #define RT 1.1
 // dont use RC > 1.0 when working in float (1.02 breaks earth mie scatter)
-#define RC 1.0005
+// RC > 1.0 doesnt seem to work very well for the log-space integral, even in doubles
+#define RC 1.0
 
 // for 1024 mu samples, using 1.0 >= mu >= -0.05 doesnt seem to be an improvement over 1.0 >= mu >= -1.0
 

@@ -2,8 +2,9 @@
 
 #define H0_MAX 0.005
 // RC == 1.01 for dritab4 v1006
+// RC == 1.0 for dritab4 v1007 (which uses a log1p table)
 // shader-computed table now stores log(dri + 1)
-#define RC 1.0005
+#define RC 1.0
 
 #define PI 3.14159265
 
