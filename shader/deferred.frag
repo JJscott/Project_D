@@ -2,7 +2,8 @@
 
 #define H0_MAX 0.005
 // RC == 1.01 for dritab4 v1006
-#define RC 1.0002
+// shader-computed table now stores log(dri + 1)
+#define RC 1.0005
 
 #define PI 3.14159265
 
@@ -81,9 +82,10 @@ float dritab_eval(float h0, float r, float mu) {
 	float u = pow(h0 / (Rg * H0_MAX), 1.0 / 3.0);
 	float v = (mu + 1.0) * 0.5;
 	float t = texture2D(sampler_dritab, vec2(u, v)).r;
-	t = min(t, 85.0); // infinities can cause problems, 87 ~= log(1e38), close to max ieee 32-bit float value
-	// texture stores log
-	return Rg * exp(t + (RC - r / Rg) / (h0 / Rg));
+	// t = min(t, 85.0); // infinities can cause problems, 87 ~= log(1e38), close to max ieee 32-bit float value
+	// texture stores log(dri + 1)
+	float k = (RC - r / Rg) / (h0 / Rg);
+	return Rg * (exp(t + k) - exp(k));
 }
 
 // density ratio integral over finite path
