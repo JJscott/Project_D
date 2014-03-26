@@ -83,7 +83,6 @@ float dritab_eval(float h0, float r, float mu) {
 	float u = pow(h0 / (Rg * H0_MAX), 1.0 / 3.0);
 	float v = (mu + 1.0) * 0.5;
 	float t = texture2D(sampler_dritab, vec2(u, v)).r;
-	// t = min(t, 85.0); // infinities can cause problems, 87 ~= log(1e38), close to max ieee 32-bit float value
 	// texture stores log(dri + 1)
 	float k = (RC - r / Rg) / (h0 / Rg);
 	return Rg * (exp(t + k) - exp(k));
@@ -215,6 +214,13 @@ void main() {
 		float mu = dot(sunnorm_v, dp);
 		float phr = phase_r(mu);
 		float phm = phase_m(mu);
+
+		// density-relative sampling:
+		// freq <- dr(x)
+		// length <- 1 / dr(x) == 1 / exp((rg - r(x)) / h0) == exp((r(x) - rg) / h0)
+		// length = ka * exp(kb * (r(x) - rg) / h0)
+		// ka = length at sea level
+		// kb = ?
 
 		// potential optimisation for thickness lookups:
 		// do reverse lookups until horizon transition, forward lookups after (2 loops?)
